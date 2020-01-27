@@ -1,4 +1,6 @@
 import bpy
+from bpy.props import CollectionProperty, BoolProperty
+
 
 class NODE_EDITOR_PT_NodesPanel(bpy.types.Panel):
     """Creates a Panel in the scene context of the properties editor"""
@@ -12,14 +14,15 @@ class NODE_EDITOR_PT_NodesPanel(bpy.types.Panel):
         layout = self.layout
         scene = context.scene
         material = context.material
-        nodes = material.node_tree.nodes if material else None 
+        nodes = material.node_tree.nodes if material else []
 
         for n in nodes:
             split = layout.split()
             c1 = split.column()
             c2 = split.column()
-            c1.label(text=n.name)
+
+            c1.prop(n, "node_enable", text=n.name)
 
             for i in n.inputs:
-                c2.label(text=i.name)
-        pass
+                c2.prop(i, "input_enable", text=i.name)
+        

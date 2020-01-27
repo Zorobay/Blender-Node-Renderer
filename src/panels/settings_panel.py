@@ -1,9 +1,9 @@
 import bpy
 
-class LayoutDemoPanel(bpy.types.Panel):
+class NODE_EDITOR_PT_SettingsPanel(bpy.types.Panel):
     """Creates a Panel in the scene context of the properties editor"""
     bl_label = "Render Properties"
-    bl_idname = "NODE_EDITOR_PT_PropertiesPanel"
+    bl_idname = "NODE_EDITOR_PT_SettingsPanel"
     bl_space_type = "NODE_EDITOR"  # Location of panel
     bl_region_type = "UI"
     bl_category = "Render"  # Name of tab
