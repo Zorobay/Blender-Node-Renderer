@@ -27,23 +27,23 @@ class PG_PublicProps(PropertyGroup):
 class FLOAT_SOCKET_PG_UserProperties(PropertyGroup):
     user_min: FloatProperty(
         name="User Min",
-        description="The minimum value for this socket that the user has defined.",
+        description="The minimum value that this input parameter will take during render.",
     )
 
     user_max: FloatProperty(
         name="User Max",
-        description="The maximum value for this socket that the user has defined.",
+        description="The maximum value that this input parameter will take during render.",
     )
 
 class COLOR_SOCKET_PG_UserProperties(PropertyGroup):
     user_min: FloatProperty(
         name="User Min",
-        description="The minimum value for this socket that the user has defined.",
+        description="The minimum value that this input parameter will take during render.",
     )
 
     user_max: FloatProperty(
         name="User Max",
-        description="The maximum value for this socket that the user has defined.",
+        description="The maximum value that this input parameter will take during render.",
     )
 
 

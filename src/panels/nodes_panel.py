@@ -14,14 +14,16 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
         nodes = material.node_tree.nodes if material else []
 
         for n in nodes:
+            row = layout.row()
+            row.prop(n, "node_enable", text=n.name)
             box = layout.box()
             split = box.split()
-            c1 = split.column()
             c2 = split.column()
             c3 = split.column()
             c4 = split.column()
 
-            c1.prop(n, "node_enable", text=n.name)
+            #c1.prop(n, "node_enable", text=n.name)
+            box.enabled = n.node_enable
 
             for i in n.inputs:
                 c2.prop(i, "input_enable", text=i.name)
