@@ -1,6 +1,8 @@
 from bpy.types import Operator
 from bpy import ops
 import random
+import sys
+import json
 
 class NODE_OP_Render(Operator):
     bl_idname = "node.render"
@@ -10,30 +12,43 @@ class NODE_OP_Render(Operator):
     def permute_params(self, nodes):
         """Permutes the parameters of all node inputs
         
+        
         Arguments:
             nodes -- The node group containing all nodes
+
+        Returns:
+            A dictionary file with the new parameters.
         """
 
+        params = {}
         for n in nodes:
-            if n.name == "Material Output":
+            if not n.node_enable:
                 continue
+            params[n.name] = {}
 
             for i in n.inputs:
-                if i.is_linked:  # Don't change the value of connected inputs
+                if not i.input_enable or i.is_linked:  # Don't change the value of connected inputs
                     continue
 
                 try:
-                    val = i.default_value
+                    # Get properties of the default value
+                    def_val_prop = i.bl_rna.properties["default_value"]  # TODO only do once
+                    s_min = def_val_prop.soft_min
+                    s_max = def_val_prop.soft_max  
 
                     if i.type == "RGBA":
-                        min = 0.0
-                        max = 1.0
-                        i.default_value = [random.randint(min,max), random.randint(min,max), random.randint(min,max), random.randint(min,max)]
-                    elif i.type == "VALUE":
-                        min = i.min_value if i.min_value else 0
-                        max = i.min_value if i.max_value else 1
+                        i.default_value = [random.randint(s_min,s_max), random.randint(s_min,s_max), random.randint(s_min,s_max), random.randint(s_min,s_max)]
+                        params[n.name][i.name] = list(i.default_value)
+                    elif def_val_prop.type == "FLOAT":
+                        i.default_value = random.uniform(s_min, s_max)
+                        params[n.name][i.name] = i.default_value
+                    else:
+                        print(i.type)
+
                 except AttributeError:
                     pass
+
+        return params
 
     def execute(self, context):
         objs = context.scene.objects
@@ -73,18 +88,28 @@ class NODE_OP_Render(Operator):
         FILE_EXTENSION = render.file_extension
         N = all_props.render_amount
 
-
-        n = nodes.get("Group")
-        inp = n.inputs.get("Wood scale")
-
+        param_data = {}
         r = 0
-        inp.default_value = 0
-        MAX_VAL = 10
+        MAX_VAL = 10 
+
+        ops.my_category.custom_confirm_dialog()  # Invoke other operator
+        sys.stdout.write("===== STARTING RENDERING JOB ({}) =====\n".format(N))
+
         while r < N:
-            self.permute_params(nodes)
+            # Print progress information
+            msg = "Rendering image {} of {}".format(r+1,N)
+            sys.stdout.write(msg + chr(8)*len(msg))
+            sys.stdout.flush()
+
+            param_data[r] = self.permute_params(nodes)
             render.filepath = "{}{}{}".format(FILEPATH, r, FILE_EXTENSION)
             ops.render.render(write_still=True)
             r += 1
-            inp.default_value = (r / N) * MAX_VAL
+
+        # Write param data to file
+        with open(FILEPATH + "param_data.json", "w") as f:
+             json.dump(param_data, f)
+
+        sys.stdout.write("DONE!")
 
         return {"FINISHED"}
