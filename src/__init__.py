@@ -26,10 +26,12 @@ from bpy.props import PointerProperty, BoolProperty
 from bpy.types import PropertyGroup
 from src.panels.settings_panel import NODE_EDITOR_PT_SettingsPanel
 from src.panels.nodes_panel import NODE_EDITOR_PT_NodesPanel
-from src.properties.properties import PG_PublicProps, PG_InternalProps, FLOAT_SOCKET_PG_UserProperties
+from src.properties.properties import PG_PublicProps, PG_InternalProps, FLOAT_SOCKET_PG_UserProperties, FLOAT_FACTOR_SOCKET_PG_UserProperties
 from src.operators.render  import NODE_OP_Render
 from src.operators.modal import SimplePropConfirmOperator
-from src.operators.register_sub_panels import NODE_EDITOR_OP_RegisterSubPanels, TestPanel, registered_subpanels
+#from src.operators.register_sub_panels import NODE_EDITOR_OP_RegisterSubPanels
+from src.operators.load_socket_props import NODE_EDITOR_OP_LoadSocketProps
+from src.operators.save_parameter_setup import NODE_EDITOR_OP_SaveParameterSetup
 
 
 panels = (
@@ -40,19 +42,19 @@ panels = (
 operators = (
     SimplePropConfirmOperator,
     NODE_OP_Render,
+    NODE_EDITOR_OP_LoadSocketProps,
+    NODE_EDITOR_OP_SaveParameterSetup
 )
 
-classes = (
+properties = (
     PG_PublicProps,
     PG_InternalProps,
     FLOAT_SOCKET_PG_UserProperties,
-    *operators,
-    *panels
+    FLOAT_FACTOR_SOCKET_PG_UserProperties
 )
 
-
 def register():
-    for c in classes:
+    for c in (*properties, *operators, *panels):
         bpy.utils.register_class(c)
 
     # Register the properties on the scene object so it is accessible everywhere
@@ -68,10 +70,10 @@ def register():
     bpy.types.NodeSocket.input_enable = BoolProperty(default=True)
 
     bpy.types.NodeSocketFloat.user_props = PointerProperty(type=FLOAT_SOCKET_PG_UserProperties)
-
+    bpy.types.NodeSocketFloatFactor.user_props = PointerProperty(type=FLOAT_FACTOR_SOCKET_PG_UserProperties)
 
 def unregister():
-    for c in classes:
+    for c in (*properties, *operators, *panels):
         bpy.utils.unregister_class(c)
 
     del bpy.types.Scene.props
