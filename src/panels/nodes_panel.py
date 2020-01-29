@@ -9,29 +9,44 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
 
     def draw(self, context):
         layout = self.layout
-        scene = context.scene
         material = context.material
-        nodes = material.node_tree.nodes if material else []
+        nodes = list(material.node_tree.nodes) if material else []
+        selected_node = context.active_node
+
+        # Put selected node first
+        nodes.insert(0, nodes.pop(nodes.index(selected_node)))
 
         for n in nodes:
-            row = layout.row()
-            row.prop(n, "node_enable", text=n.name)
+            layout.prop(n, "node_enable", text=n.name)
             box = layout.box()
             split = box.split()
+            c1 = split.column()
             c2 = split.column()
             c3 = split.column()
-            c4 = split.column()
-
-            #c1.prop(n, "node_enable", text=n.name)
             box.enabled = n.node_enable
 
             for i in n.inputs:
-                c2.prop(i, "input_enable", text=i.name)
+                if i.is_linked:
+                    continue
 
-            try:
-                def_val_prop = i.bl_rna.properties["default_value"]
-                if i.bl_idname == "NodeSocketFloat":
-                    c3.prop(i.user_props, "user_min", text="")
-                    c4.prop(i.user_props, "user_max", text="")
-            except KeyError:
-                pass
+                
+                c1.prop(i, "input_enable", text=i.name)
+
+                try:
+                    def_val_prop = i.bl_rna.properties["default_value"]
+                    if i.bl_idname in ("NodeSocketFloat", "NodeSocketFloatFactor"):
+                        c2.prop(i.user_props, "user_min", text="")
+                        c3.prop(i.user_props, "user_max", text="")                        
+                    elif i.bl_idname == "NodeSocketColor":
+                        c2.separator_spacer()
+                        c3.separator_spacer()
+                        #c2.prop(i.bl_rna.properties, "default_value", text="")
+                        pass
+                    else:
+                        # Insert empty space so that the column items are aligned properly
+                        c2.separator_spacer()
+                        c3.separator_spacer()
+                        pass
+
+                except KeyError:
+                    pass
