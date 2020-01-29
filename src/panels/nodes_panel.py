@@ -13,8 +13,12 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
         nodes = list(material.node_tree.nodes) if material else []
         selected_node = context.active_node
 
-        # Disply a 'Save Parameter Setup' button
-        layout.operator("node.save_parameter_setup")
+        # Disply a 'Save Parameter Setup' button and a 'Load Parameter Setup" button
+        split_op = layout.split()
+        cop1 = split_op.column()
+        cop2 = split_op.column()
+        cop1.operator("node.save_parameter_setup", icon="FILE_TICK")
+        cop2.operator("node.load_parameter_setup", icon="FILEBROWSER")
 
         # Put selected node first
         nodes.insert(0, nodes.pop(nodes.index(selected_node)))

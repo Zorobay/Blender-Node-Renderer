@@ -31,7 +31,7 @@ from src.operators.render  import NODE_OP_Render
 from src.operators.modal import SimplePropConfirmOperator
 #from src.operators.register_sub_panels import NODE_EDITOR_OP_RegisterSubPanels
 from src.operators.load_socket_props import NODE_EDITOR_OP_LoadSocketProps
-from src.operators.save_parameter_setup import NODE_EDITOR_OP_SaveParameterSetup
+from src.operators.parameter_setup import NODE_EDITOR_OP_SaveParameterSetup, NODE_EDITOR_OP_LoadParameterSetup
 
 
 panels = (
@@ -43,7 +43,8 @@ operators = (
     SimplePropConfirmOperator,
     NODE_OP_Render,
     NODE_EDITOR_OP_LoadSocketProps,
-    NODE_EDITOR_OP_SaveParameterSetup
+    NODE_EDITOR_OP_SaveParameterSetup,
+    NODE_EDITOR_OP_LoadParameterSetup
 )
 
 properties = (
