@@ -21,15 +21,21 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
         cop2.operator("node.load_parameter_setup", icon="FILEBROWSER")
 
         # Put selected node first
-        nodes.insert(0, nodes.pop(nodes.index(selected_node)))
+        if selected_node:
+            nodes.insert(0, nodes.pop(nodes.index(selected_node)))
 
         for n in nodes:
+            # Don't display nodes we can't control (no inputs) or where all inputs are linked
+            if len(n.inputs) == 0 or len([i.name for i in n.inputs if not i.is_linked]) == 0:  
+                continue
+
             layout.prop(n, "node_enable", text=n.name)
             box = layout.box()
             split = box.split()
             c1 = split.column()
             c2 = split.column()
             c3 = split.column()
+
             box.enabled = n.node_enable
 
             for i in n.inputs:
@@ -44,10 +50,14 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
                         c2.prop(i.user_props, "user_min", text="")
                         c3.prop(i.user_props, "user_max", text="")
                     elif i.bl_idname == "NodeSocketColor":
-                        c2.separator_spacer()
-                        c3.separator_spacer()
+                        c2.label(text="ALL")
+                        c3.label(text="ALL")
                         # c2.prop(i.bl_rna.properties, "default_value", text="")
                         pass
+                    elif i.bl_idname == "NodeSocketVectorXYZ":
+                        c2.prop(i.user_props, "user_min", text="")
+                        c3.prop(i.user_props, "user_max", text="")
+                        c1.separator(factor=6.3)
                     else:
                         # Insert empty space so that the column items are aligned properly
                         c2.separator_spacer()

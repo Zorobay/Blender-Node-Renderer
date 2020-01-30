@@ -8,6 +8,61 @@ KEY_PARAMS = "parameters"
 KEY_MAX = "user_max"
 KEY_MIN = "user_min"
 
+def node_params_default_vaulues_to_json(nodes) -> dict:
+    data = {}
+    for n in nodes:
+        data[n.name] = {}
+
+        for i in n.inputs:
+
+            if i.is_linked:
+                continue
+
+            try:
+                data[n.name][i.name] = i.default_value
+            except KeyError:
+                pass
+
+
+
+def node_params_to_json(nodes) -> dict:
+    """Extract user set min and max value of node parameters (inputs) and returns them in a dictionary.
+    
+    Arguments:
+        nodes - a collection of a material's nodes
+    
+    Returns:
+        dict -- a dictionary with parameter values
+    """
+    data = {}
+    for n in nodes:
+        data[n.name] = {KEY_ENABLED: n.node_enable, KEY_PARAMS: {}}
+
+        for i in n.inputs:
+            try:
+                props = i.user_props
+                if i.type == "VECTOR":
+                    u_min = list(props.user_min)
+                    u_max = list(props.user_max)
+                else:
+                    u_min = props.user_min
+                    u_max = props.user_max
+                    
+                input_data = {
+                    KEY_ENABLED: i.input_enable,
+                    KEY_MIN: u_min,
+                    KEY_MAX: u_max
+                }
+            except AttributeError:
+                input_data = {
+                    KEY_ENABLED: i.input_enable,
+                }
+
+            data[n.name][KEY_PARAMS][i.name] = input_data
+
+    return data
+
+
 class NODE_EDITOR_OP_LoadParameterSetup(bpy.types.Operator, ImportHelper):
     """Operator that allows the user to load a JSON file with previously save parameter setup for
      the users set min and max values for inputs of nodes.
@@ -85,25 +140,7 @@ class NODE_EDITOR_OP_SaveParameterSetup(bpy.types.Operator, ImportHelper):
 
     def execute(self, context):
         nodes = context.material.node_tree.nodes
-        data = {}
-
-        for n in nodes:
-            data[n.name] = {KEY_ENABLED: n.node_enable, KEY_PARAMS: {}}
-
-            for i in n.inputs:
-                try:
-                    props = i.user_props
-                    input_data = {
-                        KEY_ENABLED: i.input_enable,
-                        KEY_MIN: props.user_min,
-                        KEY_MAX: props.user_max,
-                    }
-                except AttributeError:
-                    input_data = {
-                        KEY_ENABLED: i.input_enable,
-                    }
-
-                data[n.name][KEY_PARAMS][i.name] = input_data
+        data = node_params_to_json(nodes)
 
         with open(self.filepath, "w") as f:
             json.dump(data, f)

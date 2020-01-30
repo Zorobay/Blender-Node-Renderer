@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import IntProperty, BoolProperty, FloatProperty
+from bpy.props import IntProperty, BoolProperty, FloatProperty, FloatVectorProperty
 from bpy.types import PropertyGroup
 
 
@@ -16,12 +16,16 @@ class PG_PublicProps(PropertyGroup):
         name="Amount", description="Total amount of images to render", min=1, default=5
     )
 
+    use_standard_setup: BoolProperty(
+        name="Use Standard Setup", description="If true, creates a standard light/camera setup and renders from a plane.", default=False
+    )
+
 
 class FLOAT_SOCKET_PG_UserProperties(PropertyGroup):
     user_min: FloatProperty(
         name="User Min",
         description="The minimum value that this input parameter will take during render",
-        default=1,
+        default=0,
     )
 
     user_max: FloatProperty(
@@ -35,6 +39,7 @@ class FLOAT_FACTOR_SOCKET_PG_UserProperties(PropertyGroup):
     user_min: FloatProperty(
         name="User Min",
         description="The minimum value that this input parameter will take during render",
+        default=0,
         min=0,
         max=1,
     )
@@ -42,10 +47,26 @@ class FLOAT_FACTOR_SOCKET_PG_UserProperties(PropertyGroup):
     user_max: FloatProperty(
         name="User Max",
         description="The maximum value that this input parameter will take during render",
+        default=1,
         min=0,
         max=1,
     )
 
+class FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties(PropertyGroup):
+
+    user_min: FloatVectorProperty(
+        name="User Min",
+        description="The minimum value that this input parameter will take during render",
+        default=(0,0,0),
+        subtype="XYZ"
+    )
+
+    user_max: FloatVectorProperty(
+        name="User Max",
+        description="The maximum value that this input parameter will take during render",
+        default=(1,1,1),
+        subtype="XYZ"
+    )
 
 class COLOR_SOCKET_PG_UserProperties(PropertyGroup):
     user_min: FloatProperty(
