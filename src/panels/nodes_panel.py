@@ -13,20 +13,12 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
         nodes = list(material.node_tree.nodes) if material else []
         selected_node = context.active_node
 
-        # Disply a 'Save Parameter Setup' button and a 'Load Parameter Setup" button
-        split_op = layout.split()
-        cop1 = split_op.column()
-        cop2 = split_op.column()
-        cop1.operator("node.save_parameter_setup", icon="FILE_TICK")
-        cop2.operator("node.load_parameter_setup", icon="FILEBROWSER")
-
         # Put selected node first
         if selected_node:
             nodes.insert(0, nodes.pop(nodes.index(selected_node)))
 
         for n in nodes:
-            # Don't display nodes we can't control (no inputs) or where all inputs are linked
-            if len(n.inputs) == 0 or len([i.name for i in n.inputs if not i.is_linked]) == 0:  
+            if not n.node_show:
                 continue
 
             layout.prop(n, "node_enable", text=n.name)
@@ -39,10 +31,10 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
             box.enabled = n.node_enable
 
             for i in n.inputs:
-                if i.is_linked:
+                if not i.input_show:
                     continue
 
-                c1.prop(i, "input_enable", text=i.name)
+                c1.prop(i, "input_enable", text="{}({})".format(i.identifier, i.name))
 
                 try:
                     def_val_prop = i.bl_rna.properties["default_value"]

@@ -7,6 +7,21 @@ KEY_ENABLED = "enabled"
 KEY_PARAMS = "parameters"
 KEY_MAX = "user_max"
 KEY_MIN = "user_min"
+KEY_NAME = "name"
+
+def find_input_by_id(inputs, id: str):
+    """Finds an input among a collection of inputs based on its unique identifier, and not its name.
+    
+    returns:
+        The NodeSocket object with the specifier identifier. Returns None if not found.
+    """
+
+    for i in inputs:
+        if i.identifier == id:
+            return i
+
+    return None
+    
 
 def node_params_default_vaulues_to_json(nodes) -> dict:
     data = {}
@@ -19,10 +34,9 @@ def node_params_default_vaulues_to_json(nodes) -> dict:
                 continue
 
             try:
-                data[n.name][i.name] = i.default_value
+                data[n.name][i.identifier] = i.default_value
             except KeyError:
                 pass
-
 
 
 def node_params_to_json(nodes) -> dict:
@@ -58,7 +72,7 @@ def node_params_to_json(nodes) -> dict:
                     KEY_ENABLED: i.input_enable,
                 }
 
-            data[n.name][KEY_PARAMS][i.name] = input_data
+            data[n.name][KEY_PARAMS][i.identifier] = {KEY_NAME: i.name, KEY_PARAMS: input_data}
 
     return data
 
@@ -93,19 +107,25 @@ class NODE_EDITOR_OP_LoadParameterSetup(bpy.types.Operator, ImportHelper):
             data = json.load(f)
 
             for node_name, node_data in data.items():
-                node = nodes.get(node_name)
-                node.node_enable = node_data[KEY_ENABLED]
+                try:
+                    node = nodes.get(node_name)
+                    node.node_enable = node_data[KEY_ENABLED]
 
-                for input_name, input_data in node_data[KEY_PARAMS].items():
-                    input = node.inputs.get(input_name)
-                    input.input_enable = input_data[KEY_ENABLED]
-
-                    try:
-                        input.user_props.user_min = input_data[KEY_MIN]
-                        input.user_props.user_max = input_data[KEY_MAX]
-                    except KeyError:
-                        pass  # If data about user_min or user_max was not stored, don't bother.
-                pass
+                    for input_id, input_data in node_data[KEY_PARAMS].items():
+                        input_data = input_data[KEY_PARAMS]
+                        input = find_input_by_id(node.inputs, input_id)
+                        input.input_enable = input_data[KEY_ENABLED]
+                        i_min = input_data[KEY_MIN]
+                        i_max = input_data[KEY_MAX]
+                        try:
+                            input.user_props.user_min = i_min
+                            input.user_props.user_max = i_max
+                        except (AttributeError, KeyError):
+                            pass
+                        except ValueError as e:
+                            print("Could not assign min and max value for node {}, input {}. \n Error: {}".format(node_name, input_id, e))
+                except (AttributeError, KeyError) as e:
+                    print("Node:{}, Input:{}  -  {}".format(node_name, input_id, e))  # Catch all errors and try to load as much as possible
 
 
         return {"FINISHED"}
