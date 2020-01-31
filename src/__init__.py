@@ -26,11 +26,11 @@ from bpy.props import PointerProperty, BoolProperty
 from bpy.types import PropertyGroup
 from src.panels.settings_panel import NODE_EDITOR_PT_SettingsPanel
 from src.panels.nodes_panel import NODE_EDITOR_PT_NodesPanel
-from src.properties.properties import PG_PublicProps, PG_InternalProps, FLOAT_SOCKET_PG_UserProperties, FLOAT_FACTOR_SOCKET_PG_UserProperties
+from src.properties.properties import PG_PublicProps, PG_InternalProps, FLOAT_SOCKET_PG_UserProperties, FLOAT_FACTOR_SOCKET_PG_UserProperties, FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties
 from src.operators.render  import NODE_OP_Render
 from src.operators.modal import SimplePropConfirmOperator
 #from src.operators.register_sub_panels import NODE_EDITOR_OP_RegisterSubPanels
-from src.operators.load_socket_props import NODE_EDITOR_OP_LoadSocketProps
+from src.operators.load_socket_props import NODE_EDITOR_OP_LoadSocketProps, NODE_EDITOR_OP_SetNodeParamShow
 from src.operators.parameter_setup import NODE_EDITOR_OP_SaveParameterSetup, NODE_EDITOR_OP_LoadParameterSetup
 
 
@@ -44,14 +44,16 @@ operators = (
     NODE_OP_Render,
     NODE_EDITOR_OP_LoadSocketProps,
     NODE_EDITOR_OP_SaveParameterSetup,
-    NODE_EDITOR_OP_LoadParameterSetup
+    NODE_EDITOR_OP_LoadParameterSetup,
+    NODE_EDITOR_OP_SetNodeParamShow
 )
 
 properties = (
     PG_PublicProps,
     PG_InternalProps,
     FLOAT_SOCKET_PG_UserProperties,
-    FLOAT_FACTOR_SOCKET_PG_UserProperties
+    FLOAT_FACTOR_SOCKET_PG_UserProperties,
+    FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties
 )
 
 def register():
@@ -66,12 +68,18 @@ def register():
 
     # Register boolean property on the node type
     bpy.types.Node.node_enable = BoolProperty(default=True)
+    bpy.types.Node.node_show = BoolProperty(default=True)
 
     # Register boolean property on the NodeSocket type
     bpy.types.NodeSocket.input_enable = BoolProperty(default=True)
+    bpy.types.NodeSocket.input_show = BoolProperty(default=True)
 
     bpy.types.NodeSocketFloat.user_props = PointerProperty(type=FLOAT_SOCKET_PG_UserProperties)
     bpy.types.NodeSocketFloatFactor.user_props = PointerProperty(type=FLOAT_FACTOR_SOCKET_PG_UserProperties)
+    bpy.types.NodeSocketVectorXYZ.user_props = PointerProperty(type=FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties)
+
+    #bpy.ops.nodes.set_node_param_show()  # TODO CANT RUN!
+
 
 def unregister():
     for c in (*properties, *operators, *panels):
@@ -80,5 +88,7 @@ def unregister():
     del bpy.types.Scene.props
     del bpy.types.Scene.internal_props
     del bpy.types.Node.node_enable
+    del bpy.types.Node.node_show
     del bpy.types.NodeSocket.input_enable
+    del bpy.types.NodeSocket.input_show
     del bpy.types.NodeSocketFloat.user_props
