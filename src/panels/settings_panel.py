@@ -23,10 +23,8 @@ class NODE_EDITOR_PT_SettingsPanel(NODE_EDITOR_PT_Panel):
         # Display rendering button
         layout.operator("node.render")
 
-        layout.operator("nodes.set_node_param_show")
-
-        # Display modal button
-        #layout.operator("my_category.custom_confirm_dialog", text="Modal test")
+        # Display button to load nodes
+        layout.operator("nodes.load_nodes")
 
         # Display all the properties that can be changed by the user to control the rendering
         props = ["x_res", "y_res", "render_amount", "use_standard_setup"]

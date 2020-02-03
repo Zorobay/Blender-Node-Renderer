@@ -51,13 +51,7 @@ def setup_HDRI_for_world(context):
     node_background.inputs["Strength"].default_value = 1.0
     world_node_tree.nodes["Environment Texture"].image = bpy.data.images.load(HDRI_PATH)
 
-
-class NODE_OP_Render(Operator):
-    bl_idname = "node.render"
-    bl_label = "Render"
-    bl_options = {"REGISTER"}
-
-    def permute_params(self, nodes):
+    def permute_params(nodes):
         """Permutes the parameters of all node inputs
         
         
@@ -112,6 +106,16 @@ class NODE_OP_Render(Operator):
 
         return params
 
+
+class NODE_OP_Render(Operator):
+    bl_idname = "node.render"
+    bl_label = "Render"
+    bl_options = {"REGISTER"}
+
+    @classmethod
+    def poll(cls, context):
+        return context.material and context.scene.internal_props.nodes_loaded
+
     def execute(self, context):
         selected_scene = context.window.scene
         # Make a full copy of the current scene and only manipulate that one
@@ -132,7 +136,7 @@ class NODE_OP_Render(Operator):
         material = context.material
         render = context.scene.render
         all_props = context.scene.props
-        nodes = material.node_tree.nodes if material else []
+        nodes = material.node_tree.nodes
 
         if all_props.use_standard_setup:
             # Delete unneeded objects
@@ -175,7 +179,7 @@ class NODE_OP_Render(Operator):
 
         start_time = time.time()
         while r < N:
-            param_data[r] = self.permute_params(nodes)
+            param_data[r] = permute_params(nodes)
             render.filepath = "{}{}{}".format(FILEPATH, r, FILE_EXTENSION)
             ops.render.render(write_still=True)
             r += 1

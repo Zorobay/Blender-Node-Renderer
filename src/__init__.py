@@ -12,26 +12,34 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 bl_info = {
-    "name" : "Node Permutator Renderer",
-    "author" : "Sebastian Hegardt",
-    "description" : "",
-    "blender" : (2, 80, 0),
-    "version" : (0, 0, 1),
-    "location" : "View3D > Object",
-    "category" : "Node" # Used for filtering in the addons panel
+    "name": "Node Permutator Renderer",
+    "author": "Sebastian Hegardt",
+    "description": "",
+    "blender": (2, 80, 0),
+    "version": (0, 0, 1),
+    "location": "View3D > Object",
+    "category": "Node",  # Used for filtering in the addons panel
 }
 
 import bpy
-from bpy.props import PointerProperty, BoolProperty 
+from bpy.props import PointerProperty, BoolProperty
 from bpy.types import PropertyGroup
 from src.panels.settings_panel import NODE_EDITOR_PT_SettingsPanel
 from src.panels.nodes_panel import NODE_EDITOR_PT_NodesPanel
-from src.properties.properties import PG_PublicProps, PG_InternalProps, FLOAT_SOCKET_PG_UserProperties, FLOAT_FACTOR_SOCKET_PG_UserProperties, FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties
-from src.operators.render  import NODE_OP_Render
+from src.properties.properties import (
+    PG_PublicProps,
+    PG_InternalProps,
+    FLOAT_SOCKET_PG_UserProperties,
+    FLOAT_FACTOR_SOCKET_PG_UserProperties,
+    FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties,
+)
+from src.operators.render import NODE_OP_Render
 from src.operators.modal import SimplePropConfirmOperator
-#from src.operators.register_sub_panels import NODE_EDITOR_OP_RegisterSubPanels
-from src.operators.load_socket_props import NODE_EDITOR_OP_LoadSocketProps, NODE_EDITOR_OP_SetNodeParamShow
-from src.operators.parameter_setup import NODE_EDITOR_OP_SaveParameterSetup, NODE_EDITOR_OP_LoadParameterSetup
+from src.operators.load_nodes import NODE_EDITOR_OP_LoadNodes
+from src.operators.parameter_setup import (
+    NODE_EDITOR_OP_SaveParameterSetup,
+    NODE_EDITOR_OP_LoadParameterSetup,
+)
 
 
 panels = (
@@ -42,10 +50,9 @@ panels = (
 operators = (
     SimplePropConfirmOperator,
     NODE_OP_Render,
-    NODE_EDITOR_OP_LoadSocketProps,
+    NODE_EDITOR_OP_LoadNodes,
     NODE_EDITOR_OP_SaveParameterSetup,
     NODE_EDITOR_OP_LoadParameterSetup,
-    NODE_EDITOR_OP_SetNodeParamShow
 )
 
 properties = (
@@ -53,8 +60,9 @@ properties = (
     PG_InternalProps,
     FLOAT_SOCKET_PG_UserProperties,
     FLOAT_FACTOR_SOCKET_PG_UserProperties,
-    FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties
+    FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties,
 )
+
 
 def register():
     for c in (*properties, *operators, *panels):
@@ -67,19 +75,16 @@ def register():
     bpy.types.Scene.internal_props = PointerProperty(type=PG_InternalProps)
 
     # Register boolean property on the node type
-    bpy.types.Node.node_enable = BoolProperty(default=True)
-    bpy.types.Node.node_show = BoolProperty(default=True)
+    bpy.types.Node.node_enable = BoolProperty(default=False)
+    bpy.types.Node.node_show = BoolProperty(default=False)
 
     # Register boolean property on the NodeSocket type
-    bpy.types.NodeSocket.input_enable = BoolProperty(default=True)
-    bpy.types.NodeSocket.input_show = BoolProperty(default=True)
+    bpy.types.NodeSocket.input_enable = BoolProperty(default=False)
+    bpy.types.NodeSocket.input_show = BoolProperty(default=False)
 
     bpy.types.NodeSocketFloat.user_props = PointerProperty(type=FLOAT_SOCKET_PG_UserProperties)
     bpy.types.NodeSocketFloatFactor.user_props = PointerProperty(type=FLOAT_FACTOR_SOCKET_PG_UserProperties)
     bpy.types.NodeSocketVectorXYZ.user_props = PointerProperty(type=FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties)
-
-    #bpy.ops.nodes.set_node_param_show()  # TODO CANT RUN!
-
 
 def unregister():
     for c in (*properties, *operators, *panels):

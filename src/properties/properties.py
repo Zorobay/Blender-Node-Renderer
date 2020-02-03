@@ -1,16 +1,17 @@
 import bpy
 from bpy.props import IntProperty, BoolProperty, FloatProperty, FloatVectorProperty
 from bpy.types import PropertyGroup
-from src.operators.load_socket_props import NODE_EDITOR_OP_SetNodeParamShow
 
 
 class PG_PublicProps(PropertyGroup):
     x_res: IntProperty(
-        name="X Resolution", description="X resolution of renders", min=1, default=128
+        name="X Resolution", description="X resolution of renders", min=1, default=128,
+        subtype="PIXEL"
     )
 
     y_res: IntProperty(
-        name="Y Resolution", description="Y resolution of renders", min=1, default=128
+        name="Y Resolution", description="Y resolution of renders", min=1, default=128,
+        subtype="PIXEL"
     )
 
     render_amount: IntProperty(
@@ -19,11 +20,6 @@ class PG_PublicProps(PropertyGroup):
 
     use_standard_setup: BoolProperty(
         name="Use Standard Setup", description="If true, creates a standard light/camera scene setup and renders from a plane.", default=False
-    )
-
-    run_show_set: BoolProperty(
-        default=False,
-        update=NODE_EDITOR_OP_SetNodeParamShow
     )
 
 
@@ -98,4 +94,10 @@ class PG_InternalProps(PropertyGroup):
         name="Running",
         description="Indicates if the script is currently running",
         default=False,
+    )
+
+    nodes_loaded: BoolProperty(
+        name="Nodes Loaded",
+        description="Signifies if the user have ordered the nodes to be loaded, and they we're successfully loaded",
+        default=False
     )
