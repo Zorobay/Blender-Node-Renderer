@@ -1,20 +1,56 @@
 import bpy
-from bpy.types import Operator
-from bpy import ops
 import random
 import sys
 import json
 import time
+
+from bpy.types import Operator
+from bpy import ops
+
 from src.operators.parameter_setup import node_params_default_vaulues_to_json
 from mathutils import Vector
+from pathlib import Path
 
 
 SCENE_NAME = "RENDER_SCENE_TMP"
+HDRI_FILE = "sunflowers_2k.hdr"
+HDRI_PATH = str(Path.cwd() / HDRI_FILE)
 
-def add_node(context, nodetype):
-    bpy.ops.node.add_node(type=nodetype.__name__)  # WRONG! NEED TO CHANGE CONTEXT!
-    node = context.active_node
-    return node
+
+def setup_HDRI_for_world(context):
+    world_node_tree = context.scene.world.node_tree
+    nodes = world_node_tree.nodes
+    links = world_node_tree.links
+    x_start = 0
+    delta_x = -200
+
+    world_node_tree.nodes.clear()
+    context.scene.world.use_nodes = True
+
+    # Create new nodes
+    node_world_output = nodes.new(type="ShaderNodeOutputWorld")
+    node_background = nodes.new(type="ShaderNodeBackground")
+    node_texture_env = nodes.new(type="ShaderNodeTexEnvironment")
+    node_texture_coord = nodes.new(type="ShaderNodeTexCoord")
+    node_mapping = nodes.new(type="ShaderNodeMapping")
+
+    # Move nodes
+    node_world_output.location.x = x_start
+    node_background.location.x = node_world_output.location.x + delta_x
+    node_texture_env.location.x = node_background.location.x + delta_x
+    node_texture_coord.location.x = node_texture_env.location.x + delta_x
+    node_mapping.location.x = node_texture_coord.location.x + delta_x
+
+    # Connect nodes
+    links.new(node_world_output.inputs["Surface"], node_background.outputs["Background"])
+    links.new(node_background.inputs["Color"], node_texture_env.outputs["Color"])
+    links.new(node_texture_env.inputs["Vector"], node_mapping.outputs["Vector"])
+    links.new(node_mapping.inputs["Vector"], node_texture_coord.outputs["Generated"])
+
+    # Set node values
+    node_background.inputs["Strength"].default_value = 1.0
+    world_node_tree.nodes["Environment Texture"].image = bpy.data.images.load(HDRI_PATH)
+
 
 class NODE_OP_Render(Operator):
     bl_idname = "node.render"
@@ -39,9 +75,7 @@ class NODE_OP_Render(Operator):
             params[n.name] = {}
 
             for i in n.inputs:
-                if (
-                    not i.input_enable or i.is_linked
-                ):  # Don't change the value of connected inputs
+                if not i.input_enable:
                     continue
 
                 try:
@@ -62,7 +96,7 @@ class NODE_OP_Render(Operator):
                         i.default_value = [
                             random.uniform(u_min.x, u_max.x),
                             random.uniform(u_min.y, u_max.y),
-                            random.uniform(u_min.z, u_max.z)
+                            random.uniform(u_min.z, u_max.z),
                         ]
                         params[n.name][i.name] = list(i.default_value)
                     elif def_val_prop.type == "FLOAT":
@@ -113,23 +147,12 @@ class NODE_OP_Render(Operator):
             plane.data.materials.append(material)
 
             # Setup HDRI
-            world_node_tree = context.scene.world.node_tree
-            print(context.active_node)
-            world_node_tree.nodes.clear()
-            world_output_node = add_node(context, bpy.types.ShaderNodeOutputWorld)
-            background_node = add_node(context, bpy.types.ShaderNodeBackground)
-            # world_node_tree.links.new(background_node.outputs["Background"], world_output_node.inputs["Surface"])
-            # world_node_tree.nodes["Background"].inputs["Strength"].default_value = 0.44
-
-            #ops.object.light_add(type="SUN", location=(0, 0, 3))  # Not needed for eevee
-            #sun = context.selected_objects[0]
-            #sun.data.energy = 1
+            setup_HDRI_for_world(context)
 
             # Setup camera placement
-            ops.object.camera_add(rotation=(0,0,0), location=(0,0,1.4))
+            ops.object.camera_add(rotation=(0, 0, 0), location=(0, 0, 1.4))
             context.selected_objects[0].name = "Rendering Camera"
             context.scene.camera = context.object
-
 
         # Setup renderer
         render.resolution_x = all_props.x_res
@@ -152,17 +175,22 @@ class NODE_OP_Render(Operator):
 
         start_time = time.time()
         while r < N:
-            passed_time = time.time()-start_time
-            avg_sample_time = passed_time / (r+1)
-            # Print progress information
-            msg = "Rendering image {} of {}".format(r + 1, N)
-            sys.stdout.write("{} [Elapsed: {:.1f}s][Remaining: {:.1f}s]\n".format(msg, passed_time, avg_sample_time * (N-r-1)))
-            sys.stdout.flush()
-
             param_data[r] = self.permute_params(nodes)
             render.filepath = "{}{}{}".format(FILEPATH, r, FILE_EXTENSION)
             ops.render.render(write_still=True)
             r += 1
+
+            # Print progress information
+            passed_time = time.time() - start_time
+            avg_sample_time = passed_time / (r)
+            msg = "Rendered image {} of {}".format(r, N)
+            sys.stdout.write(
+                "{} [Elapsed: {:.1f}s][Remaining: {:.1f}s]\n".format(
+                    msg, passed_time, avg_sample_time * (N - r)
+                )
+            )
+            sys.stdout.flush()
+
 
         # Write param data to file
         with open(FILEPATH + "param_data.json", "w") as f:
@@ -170,6 +198,10 @@ class NODE_OP_Render(Operator):
 
         sys.stdout.write("DONE!\n")
         total_time = time.time() - start_time
-        sys.stdout.write("Total Time: {:.1f}s [Avg per render: {:.2f}]".format(total_time, total_time / (N)))
+        sys.stdout.write(
+            "Total Time: {:.1f}s [Avg per render: {:.2f}]".format(
+                total_time, total_time / (N)
+            )
+        )
 
         return {"FINISHED"}

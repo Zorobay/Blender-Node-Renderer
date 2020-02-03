@@ -1,6 +1,7 @@
 import bpy
 from src.panels.base_panel import NODE_EDITOR_PT_Panel
 
+
 class NODE_EDITOR_PT_SettingsPanel(NODE_EDITOR_PT_Panel):
     """Creates a Panel in the scene context of the properties editor"""
     bl_label = "Render Properties"
@@ -25,7 +26,7 @@ class NODE_EDITOR_PT_SettingsPanel(NODE_EDITOR_PT_Panel):
         layout.operator("nodes.set_node_param_show")
 
         # Display modal button
-        layout.operator("my_category.custom_confirm_dialog", text="Modal test")
+        #layout.operator("my_category.custom_confirm_dialog", text="Modal test")
 
         # Display all the properties that can be changed by the user to control the rendering
         props = ["x_res", "y_res", "render_amount", "use_standard_setup"]

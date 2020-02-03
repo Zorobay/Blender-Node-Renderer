@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import IntProperty, BoolProperty, FloatProperty, FloatVectorProperty
 from bpy.types import PropertyGroup
+from src.operators.load_socket_props import NODE_EDITOR_OP_SetNodeParamShow
 
 
 class PG_PublicProps(PropertyGroup):
@@ -17,7 +18,12 @@ class PG_PublicProps(PropertyGroup):
     )
 
     use_standard_setup: BoolProperty(
-        name="Use Standard Setup", description="If true, creates a standard light/camera setup and renders from a plane.", default=False
+        name="Use Standard Setup", description="If true, creates a standard light/camera scene setup and renders from a plane.", default=False
+    )
+
+    run_show_set: BoolProperty(
+        default=False,
+        update=NODE_EDITOR_OP_SetNodeParamShow
     )
 
 
