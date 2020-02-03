@@ -7,6 +7,11 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
     bl_idname = "NODE_EDITOR_PT_NodesPanel"
     bl_label = "Render Nodes"
 
+    @classmethod
+    def poll(cls, context):
+        return context.scene.internal_props.nodes_loaded
+        
+
     def draw(self, context):
         layout = self.layout
         material = context.material
@@ -38,7 +43,7 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
 
                 try:
                     def_val_prop = i.bl_rna.properties["default_value"]
-                    if i.bl_idname in ("NodeSocketFloat", "NodeSocketFloatFactor"):
+                    if i.bl_idname in ("NodeSocketFloat", "NodeSocketFloatFactor", "NodeSocketVectorXYZ"):
                         c2.prop(i.user_props, "user_min", text="")
                         c3.prop(i.user_props, "user_max", text="")
                     elif i.bl_idname == "NodeSocketColor":
@@ -47,8 +52,6 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
                         # c2.prop(i.bl_rna.properties, "default_value", text="")
                         pass
                     elif i.bl_idname == "NodeSocketVectorXYZ":
-                        c2.prop(i.user_props, "user_min", text="")
-                        c3.prop(i.user_props, "user_max", text="")
                         c1.separator(factor=6.3)
                     else:
                         # Insert empty space so that the column items are aligned properly

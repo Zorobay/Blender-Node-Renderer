@@ -51,60 +51,60 @@ def setup_HDRI_for_world(context):
     node_background.inputs["Strength"].default_value = 1.0
     world_node_tree.nodes["Environment Texture"].image = bpy.data.images.load(HDRI_PATH)
 
-    def permute_params(nodes):
-        """Permutes the parameters of all node inputs
-        
-        
-        Arguments:
-            nodes -- The node group containing all nodes
+def permute_params(nodes):
+    """Permutes the parameters of all node inputs
+    
+    
+    Arguments:
+        nodes -- The node group containing all nodes
 
-        Returns:
-            A dictionary file with the new parameters.
-        """
+    Returns:
+        A dictionary file with the new parameters.
+    """
 
-        params = {}
-        for n in nodes:
-            if not n.node_enable:
+    params = {}
+    for n in nodes:
+        if not n.node_enable:
+            continue
+        params[n.name] = {}
+
+        for i in n.inputs:
+            if not i.input_enable:
                 continue
-            params[n.name] = {}
 
-            for i in n.inputs:
-                if not i.input_enable:
-                    continue
+            try:
+                # Get properties of the default value
+                def_val_prop = i.bl_rna.properties["default_value"]
+                u_min = i.user_props.user_min
+                u_max = i.user_props.user_max
 
-                try:
-                    # Get properties of the default value
-                    def_val_prop = i.bl_rna.properties["default_value"]
-                    u_min = i.user_props.user_min
-                    u_max = i.user_props.user_max
+                if i.type == "RGBA":
+                    i.default_value = [
+                        random.randint(u_min, u_max),
+                        random.randint(u_min, u_max),
+                        random.randint(u_min, u_max),
+                        1.0,
+                    ]
+                    params[n.name][i.name] = list(i.default_value)
+                elif i.bl_idname == "NodeSocketVectorXYZ":
+                    i.default_value = [
+                        random.uniform(u_min.x, u_max.x),
+                        random.uniform(u_min.y, u_max.y),
+                        random.uniform(u_min.z, u_max.z),
+                    ]
+                    params[n.name][i.name] = list(i.default_value)
+                elif def_val_prop.type == "FLOAT":
+                    i.default_value = random.uniform(u_min, u_max)
+                    params[n.name][i.name] = i.default_value
+                else:
+                    print(i.type)
 
-                    if i.type == "RGBA":
-                        i.default_value = [
-                            random.randint(u_min, u_max),
-                            random.randint(u_min, u_max),
-                            random.randint(u_min, u_max),
-                            1.0,
-                        ]
-                        params[n.name][i.name] = list(i.default_value)
-                    elif i.bl_idname == "NodeSocketVectorXYZ":
-                        i.default_value = [
-                            random.uniform(u_min.x, u_max.x),
-                            random.uniform(u_min.y, u_max.y),
-                            random.uniform(u_min.z, u_max.z),
-                        ]
-                        params[n.name][i.name] = list(i.default_value)
-                    elif def_val_prop.type == "FLOAT":
-                        i.default_value = random.uniform(u_min, u_max)
-                        params[n.name][i.name] = i.default_value
-                    else:
-                        print(i.type)
+            except AttributeError as e:
+                pass
+            except KeyError:
+                pass
 
-                except AttributeError as e:
-                    pass
-                except KeyError:
-                    pass
-
-        return params
+    return params
 
 
 class NODE_OP_Render(Operator):

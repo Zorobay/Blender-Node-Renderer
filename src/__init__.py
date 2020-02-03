@@ -85,7 +85,12 @@ def register():
     bpy.types.NodeSocketFloat.user_props = PointerProperty(type=FLOAT_SOCKET_PG_UserProperties)
     bpy.types.NodeSocketFloatFactor.user_props = PointerProperty(type=FLOAT_FACTOR_SOCKET_PG_UserProperties)
     bpy.types.NodeSocketVectorXYZ.user_props = PointerProperty(type=FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties)
-
+    bpy.types.NodeSocketVector.user_props = PointerProperty(type=FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties)
+    bpy.types.NodeSocketVectorAcceleration.user_props = PointerProperty(type=FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties)
+    bpy.types.NodeSocketVectorDirection.user_props = PointerProperty(type=FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties)
+    bpy.types.NodeSocketVectorXYZ.user_props = PointerProperty(type=FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties)
+    bpy.types.NodeSocketVectorXYZ.user_props = PointerProperty(type=FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties)
+    
 def unregister():
     for c in (*properties, *operators, *panels):
         bpy.utils.unregister_class(c)
