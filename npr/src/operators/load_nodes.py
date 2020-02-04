@@ -1,5 +1,5 @@
 import bpy
-from src.operators.parameter_setup import find_socket_by_id
+from npr.src.operators.parameter_setup import find_socket_by_id
 
 def get_input_min_maxes(input_node):
     if not input_node:
@@ -32,12 +32,12 @@ class NODE_EDITOR_OP_LoadNodes(bpy.types.Operator):
 
         for n in nodes:
             # Don't display nodes we can't control (no inputs or where all inputs are linked)
-            status = len(n.inputs) == 0 or len([i.name for i in n.inputs if not i.is_linked]) == 0
+            status = len(n.inputs) == 0 or len([i.name for i in n.inputs if not i.is_linked]) == 0 or n.type == "OUTPUT_MATERIAL"
             n.node_show = not status
             n.node_enable = not status
 
             for i in n.inputs:
-                status = i.is_linked or i.bl_idname in ("NodeSocketVector", "NodeSocketShader")
+                status = i.is_linked or i.bl_idname in ("NodeSocketVector", "NodeSocketShader") or n.type == "OUTPUT_MATERIAL"
                 i.input_enable = not status
                 i.input_show = not status
 
@@ -56,6 +56,7 @@ class NODE_EDITOR_OP_LoadNodes(bpy.types.Operator):
                     except KeyError:
                         pass
 
+            
 
         context.scene.internal_props.nodes_loaded = True
         return {"FINISHED"}

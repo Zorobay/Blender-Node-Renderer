@@ -3,18 +3,18 @@ import random
 import sys
 import json
 import time
+import npr
 
 from bpy.types import Operator
 from bpy import ops
 
-from src.operators.parameter_setup import node_params_default_vaulues_to_json
 from mathutils import Vector
 from pathlib import Path
 
 
 SCENE_NAME = "RENDER_SCENE_TMP"
 HDRI_FILE = "sunflowers_2k.hdr"
-HDRI_PATH = str(Path.cwd() / HDRI_FILE)
+HDRI_PATH = str(Path(npr.__file__).parent / "res" / HDRI_FILE)
 
 
 def setup_HDRI_for_world(context):
@@ -31,15 +31,15 @@ def setup_HDRI_for_world(context):
     node_world_output = nodes.new(type="ShaderNodeOutputWorld")
     node_background = nodes.new(type="ShaderNodeBackground")
     node_texture_env = nodes.new(type="ShaderNodeTexEnvironment")
-    node_texture_coord = nodes.new(type="ShaderNodeTexCoord")
     node_mapping = nodes.new(type="ShaderNodeMapping")
+    node_texture_coord = nodes.new(type="ShaderNodeTexCoord")
 
     # Move nodes
     node_world_output.location.x = x_start
     node_background.location.x = node_world_output.location.x + delta_x
     node_texture_env.location.x = node_background.location.x + delta_x
-    node_texture_coord.location.x = node_texture_env.location.x + delta_x
-    node_mapping.location.x = node_texture_coord.location.x + delta_x
+    node_mapping.location.x = node_texture_env.location.x + delta_x
+    node_texture_coord.location.x = node_texture_coord.location.x + delta_x
 
     # Connect nodes
     links.new(node_world_output.inputs["Surface"], node_background.outputs["Background"])
@@ -126,7 +126,6 @@ class NODE_OP_Render(Operator):
             ops.object.delete()
             bpy.ops.scene.delete()
         except KeyError as e:
-            print(e)
             pass
 
         ops.scene.new(type="FULL_COPY")
@@ -162,7 +161,9 @@ class NODE_OP_Render(Operator):
         render.resolution_x = all_props.x_res
         render.resolution_y = all_props.y_res
         render.engine = "CYCLES"
-        context.scene.cycles.samples = 120
+        context.scene.cycles.device = "GPU"
+        context.scene.cycles.feature_set = "SUPPORTED"        
+        context.scene.cycles.samples = 200
 
         # Setup render constants
         FILEPATH = render.filepath

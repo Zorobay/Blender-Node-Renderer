@@ -1,7 +1,6 @@
 import bpy
 from bpy.props import CollectionProperty, BoolProperty
-from src.panels.base_panel import NODE_EDITOR_PT_Panel
-
+from npr.src.panels.base_panel import NODE_EDITOR_PT_Panel
 
 class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
     bl_idname = "NODE_EDITOR_PT_NodesPanel"
@@ -24,7 +23,10 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
 
         # Put selected node first
         if selected_node:
-            nodes.insert(0, nodes.pop(nodes.index(selected_node)))
+            try:
+                nodes.insert(0, nodes.pop(nodes.index(selected_node)))
+            except ValueError:
+                print("Unable to find node {} in list of nodes for material {}".format(selected_node, material))
 
         for n in nodes:
             if not n.node_show:
@@ -32,10 +34,12 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
 
             layout.prop(n, "node_enable", text=n.name)
             box = layout.box()
-            split = box.split()
+            split = box.split(factor=0.45, align=True)
             c1 = split.column()
-            c2 = split.column()
-            c3 = split.column()
+            c_min_max = split.column()
+            split2 = c_min_max.split(factor=0.5, align=True)
+            c2 = split2.column()
+            c3 = split2.column()
 
             box.enabled = n.node_enable
 
@@ -47,21 +51,16 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
 
                 try:
                     def_val_prop = i.bl_rna.properties["default_value"]
-                    if i.bl_idname in ("NodeSocketFloat", "NodeSocketFloatFactor", "NodeSocketVectorXYZ"):
-                        c2.prop(i.user_props, "user_min", text="")
-                        c3.prop(i.user_props, "user_max", text="")
-                    elif i.bl_idname == "NodeSocketColor":
+                    if i.bl_idname in ("NodeSocketColor"):
                         c2.label(text="ALL")
                         c3.label(text="ALL")
-                        # c2.prop(i.bl_rna.properties, "default_value", text="")
-                        pass
-                    elif i.bl_idname == "NodeSocketVectorXYZ":
+                    elif i.bl_idname.startswith("NodeSocketVector"):
+                        c2.prop(i.user_props, "user_min", text="")
+                        c3.prop(i.user_props, "user_max", text="")
                         c1.separator(factor=6.3)
                     else:
-                        # Insert empty space so that the column items are aligned properly
-                        c2.separator_spacer()
-                        c3.separator_spacer()
-                        pass
-
+                        c2.prop(i.user_props, "user_min", text="")
+                        c3.prop(i.user_props, "user_max", text="")                       
+   
                 except KeyError:
                     pass

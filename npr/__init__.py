@@ -17,27 +17,29 @@ bl_info = {
     "description": "",
     "blender": (2, 80, 0),
     "version": (0, 0, 1),
-    "location": "View3D > Object",
+    "location": "Node Editor Toolbar under Render",
     "category": "Node",  # Used for filtering in the addons panel
 }
 
 import bpy
 from bpy.props import PointerProperty, BoolProperty
 from bpy.types import PropertyGroup
-from src.panels.settings_panel import NODE_EDITOR_PT_SettingsPanel
-from src.panels.nodes_panel import NODE_EDITOR_PT_NodesPanel
-from src.properties.properties import (
+from npr.src.panels.settings_panel import NODE_EDITOR_PT_SettingsPanel
+from npr.src.panels.nodes_panel import NODE_EDITOR_PT_NodesPanel
+from npr.src.properties.properties import (
     PG_PublicProps,
     PG_InternalProps,
+)
+from npr.src.properties.socket_props import (
     FLOAT_SOCKET_PG_UserProperties,
     FLOAT_FACTOR_SOCKET_PG_UserProperties,
-    FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties,
+    FLOAT_VECTOR_SOCKET_PG_UserProperties,
 )
 
-from src.operators.render import NODE_OP_Render
-from src.operators.modal import SimplePropConfirmOperator
-from src.operators.load_nodes import NODE_EDITOR_OP_LoadNodes
-from src.operators.parameter_setup import (
+from npr.src.operators.render import NODE_OP_Render
+from npr.src.operators.modal import SimplePropConfirmOperator
+from npr.src.operators.load_nodes import NODE_EDITOR_OP_LoadNodes
+from npr.src.operators.parameter_setup import (
     NODE_EDITOR_OP_SaveParameterSetup,
     NODE_EDITOR_OP_LoadParameterSetup,
 )
@@ -60,9 +62,11 @@ properties = (
     PG_InternalProps,
     FLOAT_SOCKET_PG_UserProperties,
     FLOAT_FACTOR_SOCKET_PG_UserProperties,
-    FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties,
+    FLOAT_VECTOR_SOCKET_PG_UserProperties,
 )
 
+VEC_TYPES = (bpy.types.NodeSocketVectorXYZ, bpy.types.NodeSocketVector, bpy.types.NodeSocketVectorAcceleration, 
+        bpy.types.NodeSocketVectorDirection, bpy.types.NodeSocketVectorTranslation, bpy.types.NodeSocketVectorEuler)
 
 def register():
     for c in (*properties, *operators, *panels):
@@ -84,12 +88,11 @@ def register():
 
     bpy.types.NodeSocketFloat.user_props = PointerProperty(type=FLOAT_SOCKET_PG_UserProperties)
     bpy.types.NodeSocketFloatFactor.user_props = PointerProperty(type=FLOAT_FACTOR_SOCKET_PG_UserProperties)
-    bpy.types.NodeSocketVectorXYZ.user_props = PointerProperty(type=FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties)
-    bpy.types.NodeSocketVector.user_props = PointerProperty(type=FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties)
-    bpy.types.NodeSocketVectorAcceleration.user_props = PointerProperty(type=FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties)
-    bpy.types.NodeSocketVectorDirection.user_props = PointerProperty(type=FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties)
-    bpy.types.NodeSocketVectorXYZ.user_props = PointerProperty(type=FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties)
-    bpy.types.NodeSocketVectorXYZ.user_props = PointerProperty(type=FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties)
+
+    # Register user props on vector types
+    for t in VEC_TYPES:
+        t.user_props = PointerProperty(type=FLOAT_VECTOR_SOCKET_PG_UserProperties)
+
     
 def unregister():
     for c in (*properties, *operators, *panels):
@@ -102,3 +105,6 @@ def unregister():
     del bpy.types.NodeSocket.input_enable
     del bpy.types.NodeSocket.input_show
     del bpy.types.NodeSocketFloat.user_props
+
+    for t in VEC_TYPES:
+        del t.user_props

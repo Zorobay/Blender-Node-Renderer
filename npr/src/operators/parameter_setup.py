@@ -2,41 +2,14 @@ import bpy
 import json
 
 from bpy_extras.io_utils import ImportHelper
+from npr.src.misc.sockets import find_socket_by_id
 
 KEY_ENABLED = "enabled"
-KEY_PARAMS = "parameters"
+KEY_USER_PARAMS = "user_params"
+KEY_DEFAULT_PARAMS = "default_params"
 KEY_MAX = "user_max"
 KEY_MIN = "user_min"
 KEY_NAME = "name"
-
-def find_socket_by_id(sockets, id: str):
-    """Finds a socket among a collection of sockets (inputs/outputs) based on its unique identifier, and not its name.
-    
-    returns:
-        The NodeSocket object with the specifier identifier. Returns None if not found.
-    """
-
-    for i in sockets:
-        if i.identifier == id:
-            return i
-
-    return None
-    
-
-def node_params_default_vaulues_to_json(nodes) -> dict:
-    data = {}
-    for n in nodes:
-        data[n.name] = {}
-
-        for i in n.inputs:
-
-            if i.is_linked:
-                continue
-
-            try:
-                data[n.name][i.identifier] = i.default_value
-            except KeyError:
-                pass
 
 
 def node_params_to_json(nodes) -> dict:
@@ -50,9 +23,29 @@ def node_params_to_json(nodes) -> dict:
     """
     data = {}
     for n in nodes:
-        data[n.name] = {KEY_ENABLED: n.node_enable, KEY_PARAMS: {}}
+        if n.type == "FRAME":
+            continue
+
+        data[n.name] = {
+            KEY_ENABLED: n.node_enable,
+            KEY_USER_PARAMS: {},
+            KEY_DEFAULT_PARAMS: {},
+        }
 
         for i in n.inputs:
+
+            # Store default value
+            try:
+                if i.bl_rna.properties["default_value"].array_length > 1:
+                    def_val = list(i.default_value)
+                else:
+                    def_val = i.default_value
+
+                data[n.name][KEY_DEFAULT_PARAMS][i.identifier] = def_val
+            except (AttributeError, KeyError):
+                pass
+
+            # Store user data
             try:
                 props = i.user_props
                 if i.type == "VECTOR":
@@ -61,18 +54,21 @@ def node_params_to_json(nodes) -> dict:
                 else:
                     u_min = props.user_min
                     u_max = props.user_max
-                    
+
                 input_data = {
                     KEY_ENABLED: i.input_enable,
                     KEY_MIN: u_min,
-                    KEY_MAX: u_max
+                    KEY_MAX: u_max,
                 }
             except AttributeError:
                 input_data = {
                     KEY_ENABLED: i.input_enable,
                 }
 
-            data[n.name][KEY_PARAMS][i.identifier] = {KEY_NAME: i.name, KEY_PARAMS: input_data}
+            data[n.name][KEY_USER_PARAMS][i.identifier] = {
+                KEY_NAME: i.name,
+                KEY_USER_PARAMS: input_data,
+            }
 
     return data
 
@@ -97,7 +93,9 @@ class NODE_EDITOR_OP_LoadParameterSetup(bpy.types.Operator, ImportHelper):
 
     @classmethod
     def poll(cls, context):
-        return context.material is not None and context.scene.internal_props.nodes_loaded
+        return (
+            context.material is not None and context.scene.internal_props.nodes_loaded
+        )
 
     def execute(self, context):
         nodes = context.material.node_tree.nodes
@@ -111,8 +109,12 @@ class NODE_EDITOR_OP_LoadParameterSetup(bpy.types.Operator, ImportHelper):
                     node = nodes.get(node_name)
                     node.node_enable = node_data[KEY_ENABLED]
 
-                    for input_id, input_data in node_data[KEY_PARAMS].items():
-                        input_data = input_data[KEY_PARAMS]
+                    for input_id, input_data in node_data[KEY_DEFAULT_PARAMS].items():
+                        input = find_socket_by_id(node.inputs, input_id)
+                        input.default_value = input_data
+
+                    for input_id, input_data in node_data[KEY_USER_PARAMS].items():
+                        input_data = input_data[KEY_USER_PARAMS]
                         input = find_socket_by_id(node.inputs, input_id)
                         input.input_enable = input_data[KEY_ENABLED]
                         i_min = input_data[KEY_MIN]
@@ -123,10 +125,13 @@ class NODE_EDITOR_OP_LoadParameterSetup(bpy.types.Operator, ImportHelper):
                         except (AttributeError, KeyError):
                             pass
                         except ValueError as e:
-                            print("Could not assign min and max value for node {}, input {}. \n Error: {}".format(node_name, input_id, e))
+                            print(
+                                "Could not assign min and max value for node {}, input {}. \n Error: {}".format(
+                                    node_name, input_id, e
+                                )
+                            )
                 except (AttributeError, KeyError) as e:
-                    print("Node:{}, Input:{}  -  {}".format(node_name, input_id, e))  # Catch all errors and try to load as much as possible
-
+                    print(e)  # Catch all errors and try to load as much as possible
 
         return {"FINISHED"}
 
@@ -156,7 +161,9 @@ class NODE_EDITOR_OP_SaveParameterSetup(bpy.types.Operator, ImportHelper):
 
     @classmethod
     def poll(cls, context):
-        return context.material is not None and context.scene.internal_props.nodes_loaded
+        return (
+            context.material is not None and context.scene.internal_props.nodes_loaded
+        )
 
     def execute(self, context):
         nodes = context.material.node_tree.nodes

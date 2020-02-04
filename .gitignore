@@ -5,6 +5,9 @@
 # Blender
 *.blend1
 
+# folders
+procedural textures/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
