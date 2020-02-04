@@ -7,12 +7,16 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
     bl_idname = "NODE_EDITOR_PT_NodesPanel"
     bl_label = "Render Nodes"
 
-    @classmethod
-    def poll(cls, context):
-        return context.scene.internal_props.nodes_loaded
+    # @classmethod
+    # def poll(cls, context):
+    #     return context.scene.internal_props.nodes_loaded
         
 
     def draw(self, context):
+        if not context.scene.internal_props.nodes_loaded:
+            self.layout.label(text="Load the nodes to see options...")
+            return
+
         layout = self.layout
         material = context.material
         nodes = list(material.node_tree.nodes) if material else []

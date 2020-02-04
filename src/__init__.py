@@ -33,6 +33,7 @@ from src.properties.properties import (
     FLOAT_FACTOR_SOCKET_PG_UserProperties,
     FLOAT_VECTOR_XYZ_SOCKET_PG_UserProperties,
 )
+
 from src.operators.render import NODE_OP_Render
 from src.operators.modal import SimplePropConfirmOperator
 from src.operators.load_nodes import NODE_EDITOR_OP_LoadNodes
@@ -40,7 +41,6 @@ from src.operators.parameter_setup import (
     NODE_EDITOR_OP_SaveParameterSetup,
     NODE_EDITOR_OP_LoadParameterSetup,
 )
-
 
 panels = (
     NODE_EDITOR_PT_SettingsPanel,

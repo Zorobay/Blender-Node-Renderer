@@ -9,14 +9,14 @@ KEY_MAX = "user_max"
 KEY_MIN = "user_min"
 KEY_NAME = "name"
 
-def find_input_by_id(inputs, id: str):
-    """Finds an input among a collection of inputs based on its unique identifier, and not its name.
+def find_socket_by_id(sockets, id: str):
+    """Finds a socket among a collection of sockets (inputs/outputs) based on its unique identifier, and not its name.
     
     returns:
         The NodeSocket object with the specifier identifier. Returns None if not found.
     """
 
-    for i in inputs:
+    for i in sockets:
         if i.identifier == id:
             return i
 
@@ -97,7 +97,7 @@ class NODE_EDITOR_OP_LoadParameterSetup(bpy.types.Operator, ImportHelper):
 
     @classmethod
     def poll(cls, context):
-        return context.material is not None
+        return context.material is not None and context.scene.internal_props.nodes_loaded
 
     def execute(self, context):
         nodes = context.material.node_tree.nodes
@@ -113,7 +113,7 @@ class NODE_EDITOR_OP_LoadParameterSetup(bpy.types.Operator, ImportHelper):
 
                     for input_id, input_data in node_data[KEY_PARAMS].items():
                         input_data = input_data[KEY_PARAMS]
-                        input = find_input_by_id(node.inputs, input_id)
+                        input = find_socket_by_id(node.inputs, input_id)
                         input.input_enable = input_data[KEY_ENABLED]
                         i_min = input_data[KEY_MIN]
                         i_max = input_data[KEY_MAX]
@@ -156,7 +156,7 @@ class NODE_EDITOR_OP_SaveParameterSetup(bpy.types.Operator, ImportHelper):
 
     @classmethod
     def poll(cls, context):
-        return context.material is not None
+        return context.material is not None and context.scene.internal_props.nodes_loaded
 
     def execute(self, context):
         nodes = context.material.node_tree.nodes
