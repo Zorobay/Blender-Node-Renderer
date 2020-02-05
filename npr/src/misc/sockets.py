@@ -31,3 +31,13 @@ def input_value_to_json(inp):
         return val
     else:
         return inp.default_value
+
+def find_number_of_enabled_sockets(nodes):
+    num = 0
+    for n in nodes:
+        if n.node_enabled:
+            for i in n.inputs:
+                if i.input_enabled:
+                    num = num + 1
+    
+    return num

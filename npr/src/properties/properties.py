@@ -1,5 +1,5 @@
 import bpy
-from bpy.props import IntProperty, BoolProperty, FloatProperty, FloatVectorProperty
+from bpy.props import IntProperty, BoolProperty, FloatProperty, FloatVectorProperty, EnumProperty, CollectionProperty, StringProperty
 from bpy.types import PropertyGroup
 
 
@@ -22,6 +22,15 @@ class PG_PublicProps(PropertyGroup):
         name="Use Standard Setup", description="If true, creates a standard light/camera scene setup and renders from a plane.", default=False
     )
 
+    STRATEGIES = [("0", "Input Consecutive", "Inputs will be permuted consecutively. For any sample, only one input will be changed"), ("1", "Input Simultaneously", "Blö")]
+
+    permutation_strategy: EnumProperty(
+        name="Permutation Strategy",
+        description="The strategy to use when permuting parameters",
+        default = "0",
+        items=STRATEGIES
+    )
+
 class PG_InternalProps(PropertyGroup):
     current_render: IntProperty(
         name="Current Render",
@@ -40,4 +49,8 @@ class PG_InternalProps(PropertyGroup):
         name="Nodes Loaded",
         description="Signifies if the user have ordered the nodes to be loaded, and they we're successfully loaded",
         default=False
+    )
+
+    loaded_parameter_default: CollectionProperty(
+
     )

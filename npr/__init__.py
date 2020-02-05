@@ -81,11 +81,11 @@ def register():
     bpy.types.Scene.internal_props = PointerProperty(type=PG_InternalProps)
 
     # Register boolean property on the node type
-    bpy.types.Node.node_enable = BoolProperty(default=False)
+    bpy.types.Node.node_enabled = BoolProperty(default=False)
     bpy.types.Node.node_show = BoolProperty(default=False)
 
     # Register boolean property on the NodeSocket type
-    bpy.types.NodeSocket.input_enable = BoolProperty(default=False)
+    bpy.types.NodeSocket.input_enabled = BoolProperty(default=False)
     bpy.types.NodeSocket.input_show = BoolProperty(default=False)
 
     bpy.types.NodeSocketFloat.user_props = PointerProperty(type=FLOAT_SOCKET_PG_UserProperties)
@@ -124,9 +124,9 @@ def unregister():
 
     del bpy.types.Scene.props
     del bpy.types.Scene.internal_props
-    del bpy.types.Node.node_enable
+    del bpy.types.Node.node_enabled
     del bpy.types.Node.node_show
-    del bpy.types.NodeSocket.input_enable
+    del bpy.types.NodeSocket.input_enabled
     del bpy.types.NodeSocket.input_show
     del bpy.types.NodeSocketFloat.user_props
 

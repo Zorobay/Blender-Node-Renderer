@@ -30,7 +30,7 @@ def node_params_to_json(nodes) -> dict:
             continue
 
         data[n.name] = {
-            KEY_ENABLED: n.node_enable,
+            KEY_ENABLED: n.node_enabled,
             KEY_USER_PARAMS: {},
             KEY_DEFAULT_PARAMS: {},
         }
@@ -56,13 +56,13 @@ def node_params_to_json(nodes) -> dict:
                     u_max = props.user_max
 
                 input_data = {
-                    KEY_ENABLED: i.input_enable,
+                    KEY_ENABLED: i.input_enabled,
                     KEY_MIN: u_min,
                     KEY_MAX: u_max,
                 }
             except AttributeError:
                 input_data = {
-                    KEY_ENABLED: i.input_enable,
+                    KEY_ENABLED: i.input_enabled,
                 }
 
             data[n.name][KEY_USER_PARAMS][i.identifier] = {
@@ -138,7 +138,7 @@ class NODE_EDITOR_OP_LoadParameterSetup(bpy.types.Operator, ImportHelper):
             for node_name, node_data in data.items():
                 try:
                     node = nodes.get(node_name)
-                    node.node_enable = node_data[KEY_ENABLED]
+                    node.node_enabled = node_data[KEY_ENABLED]
 
                     for input_id, input_data in node_data[KEY_DEFAULT_PARAMS].items():
                         set_param_value_from_json(node, input_id, input_data)
@@ -146,7 +146,7 @@ class NODE_EDITOR_OP_LoadParameterSetup(bpy.types.Operator, ImportHelper):
                     for input_id, input_data in node_data[KEY_USER_PARAMS].items():
                         input_data = input_data[KEY_USER_PARAMS]
                         inp = find_socket_by_id(node.inputs, input_id)
-                        inp.input_enable = input_data[KEY_ENABLED]
+                        inp.input_enabled = input_data[KEY_ENABLED]
                         i_min = input_data[KEY_MIN]
                         i_max = input_data[KEY_MAX]
                         try:

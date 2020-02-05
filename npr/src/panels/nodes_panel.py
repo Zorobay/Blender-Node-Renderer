@@ -32,7 +32,7 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
             if not n.node_show:
                 continue
 
-            layout.prop(n, "node_enable", text=n.name)
+            layout.prop(n, "node_enabled", text=n.name)
             box = layout.box()
             split = box.split(factor=0.45, align=True)
             c1 = split.column()
@@ -41,13 +41,13 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
             c2 = split2.column()
             c3 = split2.column()
 
-            box.enabled = n.node_enable
+            box.enabled = n.node_enabled
 
             for i in n.inputs:
                 if not i.input_show:
                     continue
 
-                c1.prop(i, "input_enable", text="{}({})".format(i.identifier, i.name))
+                c1.prop(i, "input_enabled", text="{}({})".format(i.identifier, i.name))
 
                 try:
                     def_val_prop = i.bl_rna.properties["default_value"]

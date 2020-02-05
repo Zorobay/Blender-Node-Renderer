@@ -4,12 +4,13 @@ import sys
 import json
 import time
 import npr
+import copy
 
 from bpy.types import Operator
 from bpy import ops
-from npr.src.misc.sockets import input_value_to_json
+from npr.src.misc.sockets import input_value_to_json, find_number_of_enabled_sockets
 
-from mathutils import Vector
+from mathutils import Vector, Color
 from pathlib import Path
 
 
@@ -55,7 +56,23 @@ def setup_HDRI_for_world(context):
     world_node_tree.nodes["Environment Texture"].image = bpy.data.images.load(HDRI_PATH)
 
 
-def permute_params(nodes):
+def permute_params_consecutive(nodes, r, N, P):
+    """This permutation strategy permutes all parameters consecutively until exhausted, therefore, for any image, only one parameter will have changed. 
+    A parameter will not start permutating until the previous is done permutating.
+
+    Arguments:
+        nodes --
+        r -- The current sample number
+        N -- The total number of samples
+        P -- The total number of parameters
+    """
+
+    samples_per_param = int(N / P)
+    i_node = 0
+    i_input = 0
+
+
+def permute_params_random(nodes):
     """Permutes the parameters of all node inputs
     
     
@@ -75,7 +92,7 @@ def permute_params(nodes):
                 # Get properties of the default value
                 def_val_prop = i.bl_rna.properties["default_value"]
 
-                if i.input_enable:  # Only permute parameters if enabled
+                if i.input_enabled:  # Only permute parameters if enabled
                     u_min = i.user_props.user_min
                     u_max = i.user_props.user_max
 
@@ -97,7 +114,9 @@ def permute_params(nodes):
                     else:
                         print(i.type)
 
-                if not i.is_linked:  # Save parameter unless it is linked (even if it wasn't permuted)
+                if (
+                    not i.is_linked
+                ):  # Save parameter unless it is linked (even if it wasn't permuted)
                     params[n.name][i.identifier] = input_value_to_json(i)
 
             except AttributeError as e:
@@ -171,17 +190,22 @@ class NODE_OP_Render(Operator):
         FILEPATH = FILEPATH[0 : FILEPATH.rfind("\\") + 1]
         FILE_EXTENSION = render.file_extension
         N = all_props.render_amount
-
+        NUM_PARAMS = find_number_of_enabled_sockets(nodes)
+        PERMUTATION_STRATEGY = context.scene.props.permutation_strategy
         param_data = {}
         r = 0
-        MAX_VAL = 10
 
-        # ops.my_category.custom_confirm_dialog()  # Invoke other operator
         sys.stdout.write("===== STARTING RENDERING JOB ({}) =====\n".format(N))
 
         start_time = time.time()
+        renderer = Renderer(nodes, N, NUM_PARAMS)
+
         while r < N:
-            param_data[r] = permute_params(nodes)
+            if PERMUTATION_STRATEGY == "0":  # Input consecutive
+                param_data[r] = renderer.permute_params_consecutive(r)
+            else:
+                param_data[r] = permute_params_random(nodes)
+
             render.filepath = "{}{}{}".format(FILEPATH, r, FILE_EXTENSION)
             ops.render.render(write_still=True)
             r += 1
@@ -198,10 +222,13 @@ class NODE_OP_Render(Operator):
             sys.stdout.flush()
 
         # Write param data to file
-        with open(FILEPATH + "param_data.json", "w") as f:
+        FILENAME = "param_data.json"
+        with open(FILEPATH + FILENAME, "w") as f:
             json.dump(param_data, f)
+            sys.stdout.write(
+                "Wrote parameter data to: {}\n".format(FILEPATH + FILENAME)
+            )
 
-        sys.stdout.write("DONE!\n")
         total_time = time.time() - start_time
         sys.stdout.write(
             "Total Time: {:.1f}s [Avg per render: {:.3f}s]".format(
@@ -210,3 +237,114 @@ class NODE_OP_Render(Operator):
         )
 
         return {"FINISHED"}
+
+
+class Renderer:
+    def __init__(self, nodes, N, P):
+        """
+        Arguments:
+            N -- The total number of samples
+            P -- The total number of parameters
+        """
+        self.nodes = nodes
+        self.N = N
+        self.P = P
+        self.SPP = int(self.N / self.P)  # Total number of samples per parameter
+        self.EXCESS = max(
+            0, self.N - (self.SPP * self.P)
+        )  # The number of parameters that can be allowed to render 1 more sample (for consecutive)
+        self.excess_r = 0  # The number of parameters that have been rendered 'excessively' (SPP + 1)
+        self.current_param_r = 0
+        self.current_param_i = 0  # Index of the current parameter
+        self.current_node_i = 0  # Index of the current node
+        self.ENABLED_NODES = [n for n in self.nodes if n.node_enabled]
+        self.current_node = self.ENABLED_NODES[0]
+        self._enabled_params = self._get_enabled_params()
+        self.current_param = self._enabled_params[0]
+        self.current_default_value = copy.copy(self.current_param.default_value)
+
+    def _get_enabled_params(self):
+        return [i for i in self.current_node.inputs if i.input_enabled]
+
+    def _set_next_node_and_param(self):
+        self.current_param_i += 1
+
+        if self.current_param_i >= len(self._enabled_params):
+            self.current_node_i += 1
+            if self.current_node_i >= len(self.ENABLED_NODES):
+                return
+            self.current_param_i = 0
+            self.current_node = self.ENABLED_NODES[self.current_node_i]
+            self._enabled_params = self._get_enabled_params()
+
+        self.current_param = self._enabled_params[self.current_param_i]
+        self.current_default_value = copy.copy(self.current_param.default_value)
+
+    def _get_color_range(self, center, radius):
+        """Returns a possible color value range, shifted from center by radius."""
+        _max = center + radius
+        _min = center - radius
+        if _max > 1.0:
+            diff = 1.0 - _max
+            _max = -diff
+            _min + diff
+        elif _min < 0.0:
+            _max -= _min
+            _min = 0.0
+
+        return (_min, _max)
+
+    def permute_params_consecutive(self, r):
+        """This permutation strategy permutes all parameters consecutively until exhausted, therefore, for any image, only one parameter will have changed. 
+        A parameter will not start permutating until the previous is done permutating.
+
+        Arguments:
+            nodes --
+            r -- The current sample number
+        """
+        def_val = self.current_param.bl_rna.properties["default_value"]
+        def_val_len = def_val.array_length
+        print("{}: {}".format(self.current_param, self.current_param.default_value))
+
+        if self.current_param.type == "RGBA":
+            c = Color(self.current_param.default_value[:3])
+            var = 0.1
+            max_mins = [self._get_color_range(c, var) for c in c.hsv]
+            rand_color = [
+                random.uniform(max_mins[i][0], max_mins[i][1]) for i in range(3)
+            ]
+            rand_color.append(1.0)
+            self.current_param.default_value = rand_color
+        else:
+            umin = self.current_param.user_props.user_min
+            umax = self.current_param.user_props.user_max
+            if def_val_len > 0:
+                self.current_param.default_value = [
+                    random.uniform(umin[i], umax[i]) for i in range(def_val_len)
+                ]
+            else:
+                self.current_param.default_value = random.uniform(umin, umax)
+
+        # Check if we're done with this input
+        self.current_param_r += 1
+        if self.current_param_r >= self.SPP:
+            if self.excess_r < self.EXCESS and not self.current_param_r >= self.SPP + 1:
+                self.excess_r += 1
+            else:
+                self.current_param_r = 0
+                # Reset this parameter to default
+                self.current_param.default_value = self.current_default_value
+
+                self._set_next_node_and_param()
+
+        params = {}
+        # Save values for all parameters
+        for n in self.nodes:
+            params[n.name] = {}
+            for i in n.inputs:
+                if not i.is_linked:
+                    try:
+                        params[n.name][i.identifier] = input_value_to_json(i)
+                    except KeyError:
+                        pass
+        return params
