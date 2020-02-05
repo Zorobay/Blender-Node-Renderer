@@ -20,19 +20,21 @@ class NODE_EDITOR_PT_SettingsPanel(NODE_EDITOR_PT_Panel):
         # Display the currently selected material
         layout.label(text="Selected Material: " + material.name if material else "None")
 
-        # Display rendering button
-        layout.operator("node.render")
-
-        # Display button to load nodes
-        layout.operator("nodes.load_nodes")
-
-        # Display all the properties that can be changed by the user to control the rendering
-        props = ["x_res", "y_res", "render_amount", "use_standard_setup"]
+        # Setup two column layout
         split = layout.split()
         col1 = split.column()
         col1.alignment = "RIGHT"
         col2 = split.column()
-        
+
+        # Display rendering button
+        col1.operator("node.render")
+
+        # Display button to load nodes
+        col2.operator("nodes.load_nodes")
+
+        # Display all the properties that can be changed by the user to control the rendering
+        props = ["x_res", "y_res", "render_amount", "use_standard_setup"]
+
         for p in props:
             name = all_props.bl_rna.properties[p].name
             col1.label(text=name)
@@ -41,6 +43,7 @@ class NODE_EDITOR_PT_SettingsPanel(NODE_EDITOR_PT_Panel):
         # Display buttons to load and save paramter setup
         col1.operator("node.save_parameter_setup", icon="FILE_TICK")
         col2.operator("node.load_parameter_setup", icon="FILEBROWSER")
+        col1.operator("node.load_default_parameters")
 
 
       

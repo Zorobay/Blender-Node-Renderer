@@ -7,6 +7,7 @@ import npr
 
 from bpy.types import Operator
 from bpy import ops
+from npr.src.misc.sockets import input_value_to_json
 
 from mathutils import Vector
 from pathlib import Path
@@ -42,7 +43,9 @@ def setup_HDRI_for_world(context):
     node_texture_coord.location.x = node_texture_coord.location.x + delta_x
 
     # Connect nodes
-    links.new(node_world_output.inputs["Surface"], node_background.outputs["Background"])
+    links.new(
+        node_world_output.inputs["Surface"], node_background.outputs["Background"]
+    )
     links.new(node_background.inputs["Color"], node_texture_env.outputs["Color"])
     links.new(node_texture_env.inputs["Vector"], node_mapping.outputs["Vector"])
     links.new(node_mapping.inputs["Vector"], node_texture_coord.outputs["Generated"])
@@ -50,6 +53,7 @@ def setup_HDRI_for_world(context):
     # Set node values
     node_background.inputs["Strength"].default_value = 1.0
     world_node_tree.nodes["Environment Texture"].image = bpy.data.images.load(HDRI_PATH)
+
 
 def permute_params(nodes):
     """Permutes the parameters of all node inputs
@@ -64,40 +68,37 @@ def permute_params(nodes):
 
     params = {}
     for n in nodes:
-        if not n.node_enable:
-            continue
         params[n.name] = {}
 
         for i in n.inputs:
-            if not i.input_enable:
-                continue
-
             try:
                 # Get properties of the default value
                 def_val_prop = i.bl_rna.properties["default_value"]
-                u_min = i.user_props.user_min
-                u_max = i.user_props.user_max
 
-                if i.type == "RGBA":
-                    i.default_value = [
-                        random.randint(u_min, u_max),
-                        random.randint(u_min, u_max),
-                        random.randint(u_min, u_max),
-                        1.0,
-                    ]
-                    params[n.name][i.name] = list(i.default_value)
-                elif i.bl_idname == "NodeSocketVectorXYZ":
-                    i.default_value = [
-                        random.uniform(u_min.x, u_max.x),
-                        random.uniform(u_min.y, u_max.y),
-                        random.uniform(u_min.z, u_max.z),
-                    ]
-                    params[n.name][i.name] = list(i.default_value)
-                elif def_val_prop.type == "FLOAT":
-                    i.default_value = random.uniform(u_min, u_max)
-                    params[n.name][i.name] = i.default_value
-                else:
-                    print(i.type)
+                if i.input_enable:  # Only permute parameters if enabled
+                    u_min = i.user_props.user_min
+                    u_max = i.user_props.user_max
+
+                    if i.type == "RGBA":
+                        i.default_value = [
+                            random.randint(u_min, u_max),
+                            random.randint(u_min, u_max),
+                            random.randint(u_min, u_max),
+                            1.0,
+                        ]
+                    elif i.bl_idname.startswith("NodeSocketVector"):
+                        i.default_value = [
+                            random.uniform(u_min.x, u_max.x),
+                            random.uniform(u_min.y, u_max.y),
+                            random.uniform(u_min.z, u_max.z),
+                        ]
+                    elif def_val_prop.type == "FLOAT":
+                        i.default_value = random.uniform(u_min, u_max)
+                    else:
+                        print(i.type)
+
+                if not i.is_linked:  # Save parameter unless it is linked (even if it wasn't permuted)
+                    params[n.name][i.identifier] = input_value_to_json(i)
 
             except AttributeError as e:
                 pass
@@ -162,7 +163,7 @@ class NODE_OP_Render(Operator):
         render.resolution_y = all_props.y_res
         render.engine = "CYCLES"
         context.scene.cycles.device = "GPU"
-        context.scene.cycles.feature_set = "SUPPORTED"        
+        context.scene.cycles.feature_set = "SUPPORTED"
         context.scene.cycles.samples = 200
 
         # Setup render constants
@@ -196,7 +197,6 @@ class NODE_OP_Render(Operator):
             )
             sys.stdout.flush()
 
-
         # Write param data to file
         with open(FILEPATH + "param_data.json", "w") as f:
             json.dump(param_data, f)
@@ -204,7 +204,7 @@ class NODE_OP_Render(Operator):
         sys.stdout.write("DONE!\n")
         total_time = time.time() - start_time
         sys.stdout.write(
-            "Total Time: {:.1f}s [Avg per render: {:.2f}]".format(
+            "Total Time: {:.1f}s [Avg per render: {:.3f}s]".format(
                 total_time, total_time / (N)
             )
         )

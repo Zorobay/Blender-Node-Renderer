@@ -18,3 +18,16 @@ def socket_index_by_id(sockets, id):
             return 0
 
     return -1
+
+def input_value_to_json(inp):
+    """
+    Extracts the default value of an input socket and returns it in a JSON comatible format.
+    """
+    if inp.bl_rna.properties["default_value"].array_length > 1:
+        val = list(inp.default_value)
+        if inp.bl_idname == "NodeSocketVectorEuler":
+            val.append(inp.default_value.order)
+
+        return val
+    else:
+        return inp.default_value

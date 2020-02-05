@@ -42,6 +42,7 @@ from npr.src.operators.load_nodes import NODE_EDITOR_OP_LoadNodes
 from npr.src.operators.parameter_setup import (
     NODE_EDITOR_OP_SaveParameterSetup,
     NODE_EDITOR_OP_LoadParameterSetup,
+    NODE_EDITOR_OP_LoadDefaultParameters
 )
 
 panels = (
@@ -55,6 +56,7 @@ operators = (
     NODE_EDITOR_OP_LoadNodes,
     NODE_EDITOR_OP_SaveParameterSetup,
     NODE_EDITOR_OP_LoadParameterSetup,
+    NODE_EDITOR_OP_LoadDefaultParameters
 )
 
 properties = (
