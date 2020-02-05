@@ -93,7 +93,29 @@ def register():
 
     # Register user props on vector types
     for t in VEC_TYPES:
-        t.user_props = PointerProperty(type=FLOAT_VECTOR_SOCKET_PG_UserProperties)
+        default_min = FLOAT_VECTOR_SOCKET_PG_UserProperties.bl_rna.properties["user_min"]
+        default_max = FLOAT_VECTOR_SOCKET_PG_UserProperties.bl_rna.properties["user_max"]
+        subtype = t.bl_rna.properties["default_value"].subtype
+        subtype = subtype if len(subtype) > 0 else "NONE"
+
+        VectorPropertyType = type(
+            "FLOAT_VECTOR_SOCKET_PG_UserProperties",
+            (bpy.types.PropertyGroup,), 
+            {
+                "user_min": bpy.props.FloatVectorProperty(
+                    name=default_min.name,
+                    default=default_min.default_array,
+                    description=default_min.description,
+                    subtype=subtype),
+                "user_max": bpy.props.FloatVectorProperty(
+                    name=default_max.name,
+                    default=default_max.default_array,
+                    description=default_max.description,
+                    subtype=subtype)
+            })
+        bpy.utils.register_class(VectorPropertyType)
+        t.user_props = PointerProperty(type=VectorPropertyType)
+
 
     
 def unregister():
