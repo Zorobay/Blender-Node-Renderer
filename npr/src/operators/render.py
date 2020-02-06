@@ -255,6 +255,7 @@ class Renderer:
         )  # The number of parameters that can be allowed to render 1 more sample (for consecutive)
         self.excess_r = 0  # The number of parameters that have been rendered 'excessively' (SPP + 1)
         self.current_param_r = 0
+        self._current_param_max_r = self.SPP + (1 if self.EXCESS > 0 else 0)  # This is used to calculate the number of steps we can increase the parameter value
         self.current_param_i = 0  # Index of the current parameter
         self.current_node_i = 0  # Index of the current node
         self.ENABLED_NODES = [n for n in self.nodes if n.node_enabled]
@@ -294,6 +295,20 @@ class Renderer:
 
         return (_min, _max)
 
+    def _get_next_default_value(self, umin, umax, r, rmax, input_type):
+        rmax -= 1  # Need to divide by one less to cover all values from min to max
+        if input_type in ("RGBA", "VECTOR"):
+            val = [n + r*((x-n) / rmax) for (x,n) in zip(umin,umax)]
+            if input_type == "RGBA":
+                val.append(1.0)
+        elif input_type == "INT":
+            val = round(umin + r * ((umax-umin) / rmax))
+        else:
+            val = umin + r * ((umax-umin) / rmax)
+
+        return val
+
+
     def permute_params_consecutive(self, r):
         """This permutation strategy permutes all parameters consecutively until exhausted, therefore, for any image, only one parameter will have changed. 
         A parameter will not start permutating until the previous is done permutating.
@@ -303,38 +318,29 @@ class Renderer:
             r -- The current sample number
         """
         def_val = self.current_param.bl_rna.properties["default_value"]
-        def_val_len = def_val.array_length
-        print("{}: {}".format(self.current_param, self.current_param.default_value))
+        input_type = self.current_param.type
 
-        if self.current_param.type == "RGBA":
+        if input_type == "RGBA":
             c = Color(self.current_param.default_value[:3])
             var = 0.1
-            max_mins = [self._get_color_range(c, var) for c in c.hsv]
-            rand_color = [
-                random.uniform(max_mins[i][0], max_mins[i][1]) for i in range(3)
-            ]
-            rand_color.append(1.0)
-            self.current_param.default_value = rand_color
+            (umin,umax) = [self._get_color_range(c, var) for c in c.hsv]
         else:
             umin = self.current_param.user_props.user_min
             umax = self.current_param.user_props.user_max
-            if def_val_len > 0:
-                self.current_param.default_value = [
-                    random.uniform(umin[i], umax[i]) for i in range(def_val_len)
-                ]
-            else:
-                self.current_param.default_value = random.uniform(umin, umax)
+
+        self.current_param.default_value = self._get_next_default_value(umin,umax,r,self._current_param_max_r, input_type)
 
         # Check if we're done with this input
         self.current_param_r += 1
-        if self.current_param_r >= self.SPP:
-            if self.excess_r < self.EXCESS and not self.current_param_r >= self.SPP + 1:
+        if self.current_param_r > self._current_param_max_r:
+            if self._current_param_max_r > self.SPP:
                 self.excess_r += 1
             else:
                 self.current_param_r = 0
                 # Reset this parameter to default
                 self.current_param.default_value = self.current_default_value
-
+                self._current_param_max_r = self.SPP + 1 if self.excess_r < self.EXCESS else self.SPP
+                    
                 self._set_next_node_and_param()
 
         params = {}
