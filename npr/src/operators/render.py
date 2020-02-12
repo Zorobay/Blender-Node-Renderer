@@ -8,7 +8,8 @@ import copy
 
 from bpy.types import Operator
 from bpy import ops
-from npr.src.misc.sockets import input_value_to_json, find_number_of_enabled_sockets
+from npr.src.misc.sockets import input_value_to_json, find_number_of_enabled_sockets, node_params_min_max_to_json
+from npr.src.misc.time import seconds_to_complete_time
 
 from mathutils import Vector, Color
 from pathlib import Path
@@ -195,6 +196,12 @@ class NODE_OP_Render(Operator):
         param_data = {}
         r = 0
 
+        # Save parameter mins and maxes (so that we can normalize them later)
+        FILENAME = "param_min_max.json"
+        with open(FILEPATH + FILENAME, "w") as f:
+            data = node_params_min_max_to_json(nodes)
+            json.dump(data, f)
+
         sys.stdout.write("===== STARTING RENDERING JOB ({}) =====\n".format(N))
 
         start_time = time.time()
@@ -212,11 +219,12 @@ class NODE_OP_Render(Operator):
 
             # Print progress information
             passed_time = time.time() - start_time
-            avg_sample_time = passed_time / (r)
+            avg_sample_time = "{}h {}m {:.2f}s".format(*seconds_to_complete_time((passed_time / r) * (N-r)))
+            passed_time = "{}h {}m {:.2f}".format(*seconds_to_complete_time(passed_time))
             msg = "Rendered image {} of {}".format(r, N)
             sys.stdout.write(
-                "{} [Elapsed: {:.1f}s][Remaining: {:.1f}s]\n".format(
-                    msg, passed_time, avg_sample_time * (N - r)
+                "{} [Elapsed: {}][Remaining: {}]\n".format(
+                    msg, passed_time, avg_sample_time
                 )
             )
             sys.stdout.flush()
