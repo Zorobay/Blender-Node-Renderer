@@ -16,7 +16,7 @@ class SimplePropConfirmOperator(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
-            return {'PASS_THROUGH'}
+        return {'PASS_THROUGH'}
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)

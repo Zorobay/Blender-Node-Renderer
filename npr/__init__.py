@@ -23,9 +23,17 @@ bl_info = {
 
 import bpy
 from bpy.props import PointerProperty, BoolProperty
-from bpy.types import PropertyGroup
-from npr.src.panels.settings_panel import NODE_EDITOR_PT_SettingsPanel
+
+from npr.src.operators.load_nodes import NODE_EDITOR_OP_LoadNodes
+from npr.src.operators.modal import SimplePropConfirmOperator
+from npr.src.operators.parameter_setup import (
+    NODE_EDITOR_OP_SaveParameterSetup,
+    NODE_EDITOR_OP_LoadParameterSetup,
+    NODE_EDITOR_OP_LoadDefaultParameters
+)
+from npr.src.operators.render import NODE_OP_Render
 from npr.src.panels.nodes_panel import NODE_EDITOR_PT_NodesPanel
+from npr.src.panels.settings_panel import NODE_EDITOR_PT_SettingsPanel
 from npr.src.properties.properties import (
     PG_PublicProps,
     PG_InternalProps,
@@ -34,15 +42,6 @@ from npr.src.properties.socket_props import (
     FLOAT_SOCKET_PG_UserProperties,
     FLOAT_FACTOR_SOCKET_PG_UserProperties,
     FLOAT_VECTOR_SOCKET_PG_UserProperties,
-)
-
-from npr.src.operators.render import NODE_OP_Render
-from npr.src.operators.modal import SimplePropConfirmOperator
-from npr.src.operators.load_nodes import NODE_EDITOR_OP_LoadNodes
-from npr.src.operators.parameter_setup import (
-    NODE_EDITOR_OP_SaveParameterSetup,
-    NODE_EDITOR_OP_LoadParameterSetup,
-    NODE_EDITOR_OP_LoadDefaultParameters
 )
 
 panels = (
@@ -67,8 +66,9 @@ properties = (
     FLOAT_VECTOR_SOCKET_PG_UserProperties,
 )
 
-VEC_TYPES = (bpy.types.NodeSocketVectorXYZ, bpy.types.NodeSocketVector, bpy.types.NodeSocketVectorAcceleration, 
-        bpy.types.NodeSocketVectorDirection, bpy.types.NodeSocketVectorTranslation, bpy.types.NodeSocketVectorEuler)
+VEC_TYPES = (bpy.types.NodeSocketVectorXYZ, bpy.types.NodeSocketVector, bpy.types.NodeSocketVectorAcceleration,
+             bpy.types.NodeSocketVectorDirection, bpy.types.NodeSocketVectorTranslation, bpy.types.NodeSocketVectorEuler)
+
 
 def register():
     for c in (*properties, *operators, *panels):
@@ -100,7 +100,7 @@ def register():
 
         VectorPropertyType = type(
             "FLOAT_VECTOR_SOCKET_PG_UserProperties",
-            (bpy.types.PropertyGroup,), 
+            (bpy.types.PropertyGroup,),
             {
                 "user_min": bpy.props.FloatVectorProperty(
                     name=default_min.name,
@@ -117,7 +117,6 @@ def register():
         t.user_props = PointerProperty(type=VectorPropertyType)
 
 
-    
 def unregister():
     for c in (*properties, *operators, *panels):
         bpy.utils.unregister_class(c)

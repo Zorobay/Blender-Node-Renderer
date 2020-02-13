@@ -1,7 +1,7 @@
 import bpy
 import json
-
 from bpy_extras.io_utils import ImportHelper
+
 from npr.src.misc.sockets import find_socket_by_id, input_value_to_json
 
 KEY_ENABLED = "enabled"
@@ -17,10 +17,10 @@ loaded_param_setup = None
 
 def node_params_to_json(nodes) -> dict:
     """Extract user set min and max value of node parameters (inputs) and returns them in a dictionary.
-    
+
     Arguments:
         nodes - a collection of a material's nodes
-    
+
     Returns:
         dict -- a dictionary with parameter values
     """
@@ -123,7 +123,7 @@ class NODE_EDITOR_OP_LoadParameterSetup(bpy.types.Operator, ImportHelper):
     @classmethod
     def poll(cls, context):
         return (
-            context.material is not None and context.scene.internal_props.nodes_loaded
+                context.material is not None and context.scene.internal_props.nodes_loaded
         )
 
     def execute(self, context):
@@ -188,7 +188,7 @@ class NODE_EDITOR_OP_SaveParameterSetup(bpy.types.Operator, ImportHelper):
     @classmethod
     def poll(cls, context):
         return (
-            context.material is not None and context.scene.internal_props.nodes_loaded
+                context.material is not None and context.scene.internal_props.nodes_loaded
         )
 
     def execute(self, context):

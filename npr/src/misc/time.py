@@ -1,10 +1,8 @@
-import time
-
 def seconds_to_complete_time(seconds, ms=False):
     """
     Breaks down an amount of time represented in seconds into hours, minutes, seconds and milliseconds (if ms=True). This time is returned as a tuple.
 
-    Returns: 
+    Returns:
         A tuple of (hours, minutes, seconds, <milliseconds>)
     """
 
@@ -13,11 +11,10 @@ def seconds_to_complete_time(seconds, ms=False):
     s = seconds % 3600 % 60
 
     if ms:
-        ms = (s - int(s))*1000
+        ms = (s - int(s)) * 1000
         s = int(s)
 
     if ms:
-        return (h,m,s,ms)
+        return (h, m, s, ms)
     else:
-        return (h,m,s)
-
+        return (h, m, s)

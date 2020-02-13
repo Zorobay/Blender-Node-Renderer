@@ -1,19 +1,18 @@
 import bpy
+import copy
+import json
 import random
 import sys
-import json
 import time
-import npr
-import copy
-
-from bpy.types import Operator
+import csv
 from bpy import ops
-from npr.src.misc.sockets import input_value_to_json, find_number_of_enabled_sockets, node_params_min_max_to_json
-from npr.src.misc.time import seconds_to_complete_time
-
-from mathutils import Vector, Color
+from bpy.types import Operator
+from mathutils import Color
 from pathlib import Path
 
+import npr
+from npr.src.misc.sockets import input_value_to_json, find_number_of_enabled_sockets, node_params_min_max_to_json, normalize, list_
+from npr.src.misc.time import seconds_to_complete_time
 
 SCENE_NAME = "RENDER_SCENE_TMP"
 HDRI_FILE = "sunflowers_2k.hdr"
@@ -58,7 +57,7 @@ def setup_HDRI_for_world(context):
 
 
 def permute_params_consecutive(nodes, r, N, P):
-    """This permutation strategy permutes all parameters consecutively until exhausted, therefore, for any image, only one parameter will have changed. 
+    """This permutation strategy permutes all parameters consecutively until exhausted, therefore, for any image, only one parameter will have changed.
     A parameter will not start permutating until the previous is done permutating.
 
     Arguments:
@@ -75,8 +74,7 @@ def permute_params_consecutive(nodes, r, N, P):
 
 def permute_params_random(nodes):
     """Permutes the parameters of all node inputs
-    
-    
+
     Arguments:
         nodes -- The node group containing all nodes
 
@@ -85,6 +83,8 @@ def permute_params_random(nodes):
     """
 
     params = {}
+    normalized_lbl = []
+
     for n in nodes:
         params[n.name] = {}
 
@@ -93,30 +93,41 @@ def permute_params_random(nodes):
                 # Get properties of the default value
                 def_val_prop = i.bl_rna.properties["default_value"]
 
-                if i.input_enabled:  # Only permute parameters if enabled
-                    u_min = i.user_props.user_min
-                    u_max = i.user_props.user_max
+                if i.input_enabled and n.node_enabled:  # Only permute parameters if enabled
+                    umin = i.user_props.user_min
+                    umax = i.user_props.user_max
 
                     if i.type == "RGBA":
-                        i.default_value = [
-                            random.randint(u_min, u_max),
-                            random.randint(u_min, u_max),
-                            random.randint(u_min, u_max),
+                        val = [
+                            random.randint(umin, umax),
+                            random.randint(umin, umax),
+                            random.randint(umin, umax),
                             1.0,
                         ]
+                        i.default_value = val
+
+
                     elif i.bl_idname.startswith("NodeSocketVector"):
-                        i.default_value = [
-                            random.uniform(u_min.x, u_max.x),
-                            random.uniform(u_min.y, u_max.y),
-                            random.uniform(u_min.z, u_max.z),
+                        val = [
+                            random.uniform(umin.x, umax.x),
+                            random.uniform(umin.y, umax.y),
+                            random.uniform(umin.z, umax.z),
                         ]
+                        i.default_value = val
                     elif def_val_prop.type == "FLOAT":
-                        i.default_value = random.uniform(u_min, u_max)
+                        val = random.uniform(umin, umax)
+                        i.default_value = val
+                        val = [val]
                     else:
                         print(i.type)
 
+                    umin = list_(umin)
+                    umax = list_(umax)
+                    for x in range(len(val)):
+                        normalized_lbl.append(normalize(val[x], umin[x], umax[x]))
+
                 if (
-                    not i.is_linked
+                        not i.is_linked
                 ):  # Save parameter unless it is linked (even if it wasn't permuted)
                     params[n.name][i.identifier] = input_value_to_json(i)
 
@@ -125,7 +136,7 @@ def permute_params_random(nodes):
             except KeyError:
                 pass
 
-    return params
+    return params, normalized_lbl
 
 
 class NODE_OP_Render(Operator):
@@ -188,12 +199,13 @@ class NODE_OP_Render(Operator):
 
         # Setup render constants
         FILEPATH = render.filepath
-        FILEPATH = FILEPATH[0 : FILEPATH.rfind("\\") + 1]
+        FILEPATH = FILEPATH[0: FILEPATH.rfind("\\") + 1]
         FILE_EXTENSION = render.file_extension
         N = all_props.render_amount
         NUM_PARAMS = find_number_of_enabled_sockets(nodes)
         PERMUTATION_STRATEGY = context.scene.props.permutation_strategy
         param_data = {}
+        data_labels = []
         r = 0
 
         # Save parameter mins and maxes (so that we can normalize them later)
@@ -205,13 +217,12 @@ class NODE_OP_Render(Operator):
         sys.stdout.write("===== STARTING RENDERING JOB ({}) =====\n".format(N))
 
         start_time = time.time()
-        renderer = Renderer(nodes, N, NUM_PARAMS)
+        # renderer = Renderer(nodes, N, NUM_PARAMS)
 
         while r < N:
-            if PERMUTATION_STRATEGY == "0":  # Input consecutive
-                param_data[r] = renderer.permute_params_consecutive(r)
-            else:
-                param_data[r] = permute_params_random(nodes)
+            pd, rl = permute_params_random(nodes)
+            param_data[r] = pd
+            data_labels.append(rl)
 
             render.filepath = "{}{}{}".format(FILEPATH, r, FILE_EXTENSION)
             ops.render.render(write_still=True)
@@ -219,7 +230,7 @@ class NODE_OP_Render(Operator):
 
             # Print progress information
             passed_time = time.time() - start_time
-            avg_sample_time = "{}h {}m {:.2f}s".format(*seconds_to_complete_time((passed_time / r) * (N-r)))
+            avg_sample_time = "{}h {}m {:.2f}s".format(*seconds_to_complete_time((passed_time / r) * (N - r)))
             passed_time = "{}h {}m {:.2f}".format(*seconds_to_complete_time(passed_time))
             msg = "Rendered image {} of {}".format(r, N)
             sys.stdout.write(
@@ -236,6 +247,12 @@ class NODE_OP_Render(Operator):
             sys.stdout.write(
                 "Wrote parameter data to: {}\n".format(FILEPATH + FILENAME)
             )
+
+        FILENAME = "normalized_data_labels.csv"
+        with open(FILEPATH + FILENAME, "w", newline="") as f:
+            w = csv.writer(f, delimiter=",")
+            w.writerows(data_labels)
+            sys.stdout.write("Wrote labels to: {}\n".format(FILEPATH + FILENAME))
 
         total_time = time.time() - start_time
         sys.stdout.write(
@@ -263,7 +280,8 @@ class Renderer:
         )  # The number of parameters that can be allowed to render 1 more sample (for consecutive)
         self.excess_r = 0  # The number of parameters that have been rendered 'excessively' (SPP + 1)
         self.current_param_r = 0
-        self._current_param_max_r = self.SPP + (1 if self.EXCESS > 0 else 0)  # This is used to calculate the number of steps we can increase the parameter value
+        self._current_param_max_r = self.SPP + (
+            1 if self.EXCESS > 0 else 0)  # This is used to calculate the number of steps we can increase the parameter value
         self.current_param_i = 0  # Index of the current parameter
         self.current_node_i = 0  # Index of the current node
         self.ENABLED_NODES = [n for n in self.nodes if n.node_enabled]
@@ -306,19 +324,18 @@ class Renderer:
     def _get_next_default_value(self, umin, umax, r, rmax, input_type):
         rmax -= 1  # Need to divide by one less to cover all values from min to max
         if input_type in ("RGBA", "VECTOR"):
-            val = [n + r*((x-n) / rmax) for (x,n) in zip(umin,umax)]
+            val = [n + r * ((x - n) / rmax) for (x, n) in zip(umin, umax)]
             if input_type == "RGBA":
                 val.append(1.0)
         elif input_type == "INT":
-            val = round(umin + r * ((umax-umin) / rmax))
+            val = round(umin + r * ((umax - umin) / rmax))
         else:
-            val = umin + r * ((umax-umin) / rmax)
+            val = umin + r * ((umax - umin) / rmax)
 
         return val
 
-
     def permute_params_consecutive(self, r):
-        """This permutation strategy permutes all parameters consecutively until exhausted, therefore, for any image, only one parameter will have changed. 
+        """This permutation strategy permutes all parameters consecutively until exhausted, therefore, for any image, only one parameter will have changed.
         A parameter will not start permutating until the previous is done permutating.
 
         Arguments:
@@ -331,12 +348,12 @@ class Renderer:
         if input_type == "RGBA":
             c = Color(self.current_param.default_value[:3])
             var = 0.1
-            (umin,umax) = [self._get_color_range(c, var) for c in c.hsv]
+            (umin, umax) = [self._get_color_range(c, var) for c in c.hsv]
         else:
             umin = self.current_param.user_props.user_min
             umax = self.current_param.user_props.user_max
 
-        self.current_param.default_value = self._get_next_default_value(umin,umax,r,self._current_param_max_r, input_type)
+        self.current_param.default_value = self._get_next_default_value(umin, umax, r, self._current_param_max_r, input_type)
 
         # Check if we're done with this input
         self.current_param_r += 1
@@ -348,7 +365,7 @@ class Renderer:
                 # Reset this parameter to default
                 self.current_param.default_value = self.current_default_value
                 self._current_param_max_r = self.SPP + 1 if self.excess_r < self.EXCESS else self.SPP
-                    
+
                 self._set_next_node_and_param()
 
         params = {}

@@ -1,4 +1,3 @@
-import bpy
 from npr.src.panels.base_panel import NODE_EDITOR_PT_Panel
 
 
@@ -11,11 +10,11 @@ class NODE_EDITOR_PT_SettingsPanel(NODE_EDITOR_PT_Panel):
         layout = self.layout
         scene = context.scene
         material = context.material
-        nodes = material.node_tree.nodes if material else None 
+        nodes = material.node_tree.nodes if material else None
         all_props = scene.props
 
         # Copy the soft max and soft min properties from all node inputs to editable properties
-        #bpy.ops.socket.load_props()
+        # bpy.ops.socket.load_props()
 
         # Display the currently selected material
         layout.label(text="Selected Material: " + material.name if material else "None")
@@ -33,7 +32,7 @@ class NODE_EDITOR_PT_SettingsPanel(NODE_EDITOR_PT_Panel):
         col2.operator("nodes.load_nodes")
 
         # Display all the properties that can be changed by the user to control the rendering
-        props = ["x_res", "y_res", "render_amount", "use_standard_setup", "permutation_strategy"]
+        props = ["x_res", "y_res", "render_amount", "use_standard_setup"]
 
         for p in props:
             name = all_props.bl_rna.properties[p].name
@@ -44,6 +43,3 @@ class NODE_EDITOR_PT_SettingsPanel(NODE_EDITOR_PT_Panel):
         col1.operator("node.save_parameter_setup", icon="FILE_TICK")
         col2.operator("node.load_parameter_setup", icon="FILEBROWSER")
         col1.operator("node.load_default_parameters")
-
-
-      

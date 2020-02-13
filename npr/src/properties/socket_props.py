@@ -1,4 +1,4 @@
-from bpy.props import FloatProperty, BoolProperty, FloatVectorProperty, StringProperty
+from bpy.props import FloatProperty, FloatVectorProperty
 from bpy.types import PropertyGroup
 
 
@@ -35,20 +35,20 @@ class FLOAT_FACTOR_SOCKET_PG_UserProperties(PropertyGroup):
 
 
 class FLOAT_VECTOR_SOCKET_PG_UserProperties(PropertyGroup):
-
     user_min: FloatVectorProperty(
         name="User Min",
         description="The minimum value that this input parameter will take during render",
-        default=(0,0,0),
+        default=(0, 0, 0),
         subtype="XYZ"
     )
 
     user_max: FloatVectorProperty(
         name="User Max",
         description="The maximum value that this input parameter will take during render",
-        default=(1,1,1),
+        default=(1, 1, 1),
         subtype="XYZ"
     )
+
 
 class COLOR_SOCKET_PG_UserProperties(PropertyGroup):
     user_min: FloatProperty(

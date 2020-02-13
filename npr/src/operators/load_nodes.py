@@ -1,5 +1,7 @@
 import bpy
+
 from npr.src.operators.parameter_setup import find_socket_by_id
+
 
 def get_input_min_maxes(input_node):
     if not input_node:
@@ -15,6 +17,7 @@ def get_input_min_maxes(input_node):
         }
 
     return data
+
 
 class NODE_EDITOR_OP_LoadNodes(bpy.types.Operator):
     bl_idname = "nodes.load_nodes"
@@ -56,9 +59,5 @@ class NODE_EDITOR_OP_LoadNodes(bpy.types.Operator):
                     except KeyError:
                         pass
 
-            
-
         context.scene.internal_props.nodes_loaded = True
         return {"FINISHED"}
-        
-        
