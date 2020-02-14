@@ -51,12 +51,22 @@ class FLOAT_VECTOR_SOCKET_PG_UserProperties(PropertyGroup):
 
 
 class COLOR_SOCKET_PG_UserProperties(PropertyGroup):
-    user_min: FloatProperty(
+    user_min: FloatVectorProperty(
         name="User Min",
         description="The minimum value that this input parameter will take during render",
+        min=0,
+        max=1,
+        default=(0,0,0),
+        subtype="XYZ",
+        precision=3
     )
 
-    user_max: FloatProperty(
+    user_max: FloatVectorProperty(
         name="User Max",
         description="The maximum value that this input parameter will take during render",
+        min=0,
+        max=1,
+        default=(1,1,1),
+        subtype="XYZ",
+        precision=3
     )

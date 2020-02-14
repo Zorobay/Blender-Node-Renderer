@@ -40,7 +40,7 @@ class NODE_EDITOR_OP_LoadNodes(bpy.types.Operator):
             n.node_enabled = not status
 
             for i in n.inputs:
-                status = i.is_linked or i.bl_idname in ("NodeSocketVector", "NodeSocketShader") or n.type == "OUTPUT_MATERIAL"
+                status = (not i.enabled) or i.is_linked or i.bl_idname in ("NodeSocketVector", "NodeSocketShader") or n.type == "OUTPUT_MATERIAL"
                 i.input_enabled = not status
                 i.input_show = not status
 

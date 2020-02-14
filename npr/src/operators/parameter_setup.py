@@ -48,7 +48,7 @@ def node_params_to_json(nodes) -> dict:
             # Store user data
             try:
                 props = i.user_props
-                if i.type == "VECTOR":
+                if i.type == "VECTOR" or i.type == "RGBA":
                     u_min = list(props.user_min)
                     u_max = list(props.user_max)
                 else:

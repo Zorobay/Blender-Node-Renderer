@@ -25,7 +25,7 @@ class PG_PublicProps(PropertyGroup):
     )
 
     use_standard_setup: BoolProperty(
-        name="Use Standard Setup", description="If true, creates a standard light/camera scene setup and renders from a plane.", default=False
+        name="Use Standard Setup", description="If true, creates a standard light/camera scene setup and renders from a plane.", default=True
     )
 
     render_output_dir: StringProperty(

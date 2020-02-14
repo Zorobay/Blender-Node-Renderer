@@ -50,10 +50,16 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
                 c1.prop(i, "input_enabled", text="{}({})".format(i.identifier, i.name))
 
                 try:
-                    def_val_prop = i.bl_rna.properties["default_value"]
                     if i.bl_idname in ("NodeSocketColor"):
-                        c2.label(text="ALL")
-                        c3.label(text="ALL")
+                        c2_sub = c2.column_flow(align=True)
+                        c2_sub.prop(i.user_props, "user_min", text="H (μ)", index=0)
+                        c2_sub.prop(i.user_props, "user_min", text="S (μ)", index=1)
+                        c2_sub.prop(i.user_props, "user_min", text="V (μ)", index=2)
+                        c3_sub = c3.column_flow(align=True)
+                        c3_sub.prop(i.user_props, "user_max", text="H (σ)", index=0)
+                        c3_sub.prop(i.user_props, "user_max", text="S (σ)", index=1)
+                        c3_sub.prop(i.user_props, "user_max", text="V (σ)", index=2)
+                        c1.separator(factor=6.8)
                     elif i.bl_idname.startswith("NodeSocketVector"):
                         c2.prop(i.user_props, "user_min", text="")
                         c3.prop(i.user_props, "user_max", text="")

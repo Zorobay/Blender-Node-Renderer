@@ -9,6 +9,7 @@ from bpy import ops
 from bpy.types import Operator
 from mathutils import Color
 from pathlib import Path
+import statistics as st
 
 import npr
 from npr.src.misc.sockets import input_value_to_json, find_number_of_enabled_sockets, node_params_min_max_to_json, normalize, list_
@@ -56,21 +57,22 @@ def setup_HDRI_for_world(context):
     world_node_tree.nodes["Environment Texture"].image = bpy.data.images.load(HDRI_PATH)
 
 
-def permute_params_consecutive(nodes, r, N, P):
-    """This permutation strategy permutes all parameters consecutively until exhausted, therefore, for any image, only one parameter will have changed.
-    A parameter will not start permutating until the previous is done permutating.
-
-    Arguments:
-        nodes --
-        r -- The current sample number
-        N -- The total number of samples
-        P -- The total number of parameters
+def color_clamp(val):
+    """Controls the value val so that it is in the range [0,1] and if the value is larger than 1, the overflow will be added to zero. 
+    If the value is less than zero, the overflow will be subtracted from 1. In this way, we can produce well centered HSV values, even if the mean
+    is around 0 or 1.
+    
+    Example:
+        1.5 will be converted to 0.5
+        2.3 will be converted to 0.3
+        -1 will be converted to 0.
+        0.5 will be converted to 0.5    
     """
-
-    samples_per_param = int(N / P)
-    i_node = 0
-    i_input = 0
-
+    overflow = val % 1
+    if val > 0:
+        return overflow
+    else:
+        return 1-overflow
 
 def permute_params_random(nodes):
     """Permutes the parameters of all node inputs
@@ -98,16 +100,12 @@ def permute_params_random(nodes):
                     umax = i.user_props.user_max
 
                     if i.type == "RGBA":
-                        val = [
-                            random.randint(umin, umax),
-                            random.randint(umin, umax),
-                            random.randint(umin, umax),
-                            1.0,
-                        ]
-                        i.default_value = val
+                        c = Color()
+                        c.hsv = color_clamp(random.normalvariate(umin.x, umax.x)), color_clamp(random.normalvariate(umin.y, umax.y)), color_clamp(random.normalvariate(umin.z, umax.z))
+                        val = [*c.hsv]
+                        i.default_value = [*c.rgb, 1.0]
 
-
-                    elif i.bl_idname.startswith("NodeSocketVector"):
+                    elif i.type == "VECTOR":
                         val = [
                             random.uniform(umin.x, umax.x),
                             random.uniform(umin.y, umax.y),
@@ -149,24 +147,26 @@ class NODE_OP_Render(Operator):
         return context.material and context.scene.internal_props.nodes_loaded and context.scene.props.render_output_dir != ""
 
     def execute(self, context):
+        all_props = context.scene.props
         selected_scene = context.window.scene
-        # Make a full copy of the current scene and only manipulate that one
-        try:
-            # Check if an old scene copy exists and delete it
-            context.window.scene = bpy.data.scenes[SCENE_NAME]
-            ops.object.select_all()
-            ops.object.delete()
-            bpy.ops.scene.delete()
-        except KeyError as e:
-            pass
 
-        ops.scene.new(type="FULL_COPY")
-        context.scene.name = SCENE_NAME
+        # Make a full copy of the current scene and only manipulate that one
+        if all_props.use_standard_setup:
+            try:
+                # Check if an old scene copy exists and delete it
+                context.window.scene = bpy.data.scenes[SCENE_NAME]
+                ops.object.select_all()
+                ops.object.delete()
+                bpy.ops.scene.delete()
+            except KeyError as e:
+                pass
+
+            ops.scene.new(type="FULL_COPY")
+            context.scene.name = SCENE_NAME
 
         objs = context.scene.objects
         material = context.material
         render = context.scene.render
-        all_props = context.scene.props
         nodes = material.node_tree.nodes
 
         if all_props.use_standard_setup:
@@ -176,7 +176,7 @@ class NODE_OP_Render(Operator):
 
             # Add plane and apply material
             ops.mesh.primitive_plane_add(
-                size=1, enter_editmode=False, location=(0, 0, 0), rotation=(0, 0, 0)
+                size=3, enter_editmode=False, location=(0, 0, 0), rotation=(0, 0, 0)
             )
             plane = context.selected_objects[0]
             plane.data.materials.append(material)
@@ -185,13 +185,14 @@ class NODE_OP_Render(Operator):
             setup_HDRI_for_world(context)
 
             # Setup camera placement
-            ops.object.camera_add(rotation=(0, 0, 0), location=(0, 0, 1.4))
+            ops.object.camera_add(rotation=(0, 0, 0), location=(0, 0, 1.6))
             context.selected_objects[0].name = "Rendering Camera"
             context.scene.camera = context.object
 
         # Setup renderer
         render.resolution_x = all_props.x_res
         render.resolution_y = all_props.y_res
+        render.resolution_percentage = 100
         render.engine = "CYCLES"
         context.scene.cycles.device = "GPU"
         context.scene.cycles.feature_set = "SUPPORTED"

@@ -90,4 +90,7 @@ def find_number_of_enabled_sockets(nodes):
 
 def normalize(val, umin, umax):
     """Normalizes the value to range [-1,1]"""
-    return ((val - umin) / (umax - umin)) * 2 - 1
+    try:
+        return ((val - umin) / (umax - umin)) * 2 - 1
+    except ZeroDivisionError:
+        return 1

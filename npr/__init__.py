@@ -41,6 +41,7 @@ from npr.src.properties.socket_props import (
     FLOAT_SOCKET_PG_UserProperties,
     FLOAT_FACTOR_SOCKET_PG_UserProperties,
     FLOAT_VECTOR_SOCKET_PG_UserProperties,
+    COLOR_SOCKET_PG_UserProperties
 )
 
 panels = (
@@ -62,6 +63,7 @@ properties = (
     FLOAT_SOCKET_PG_UserProperties,
     FLOAT_FACTOR_SOCKET_PG_UserProperties,
     FLOAT_VECTOR_SOCKET_PG_UserProperties,
+    COLOR_SOCKET_PG_UserProperties
 )
 
 VEC_TYPES = (bpy.types.NodeSocketVectorXYZ, bpy.types.NodeSocketVector, bpy.types.NodeSocketVectorAcceleration,
@@ -88,6 +90,7 @@ def register():
 
     bpy.types.NodeSocketFloat.user_props = PointerProperty(type=FLOAT_SOCKET_PG_UserProperties)
     bpy.types.NodeSocketFloatFactor.user_props = PointerProperty(type=FLOAT_FACTOR_SOCKET_PG_UserProperties)
+    bpy.types.NodeSocketColor.user_props = PointerProperty(type=COLOR_SOCKET_PG_UserProperties)
 
     # Register user props on vector types
     for t in VEC_TYPES:
