@@ -146,7 +146,7 @@ class NODE_OP_Render(Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.material and context.scene.internal_props.nodes_loaded
+        return context.material and context.scene.internal_props.nodes_loaded and context.scene.props.render_output_dir != ""
 
     def execute(self, context):
         selected_scene = context.window.scene
@@ -198,8 +198,7 @@ class NODE_OP_Render(Operator):
         context.scene.cycles.samples = 200
 
         # Setup render constants
-        FILEPATH = render.filepath
-        FILEPATH = FILEPATH[0: FILEPATH.rfind("\\") + 1]
+        FILEPATH = all_props.render_output_dir
         FILE_EXTENSION = render.file_extension
         N = all_props.render_amount
         NUM_PARAMS = find_number_of_enabled_sockets(nodes)

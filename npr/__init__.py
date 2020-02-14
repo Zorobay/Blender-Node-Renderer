@@ -25,7 +25,6 @@ import bpy
 from bpy.props import PointerProperty, BoolProperty
 
 from npr.src.operators.load_nodes import NODE_EDITOR_OP_LoadNodes
-from npr.src.operators.modal import SimplePropConfirmOperator
 from npr.src.operators.parameter_setup import (
     NODE_EDITOR_OP_SaveParameterSetup,
     NODE_EDITOR_OP_LoadParameterSetup,
@@ -50,7 +49,6 @@ panels = (
 )
 
 operators = (
-    SimplePropConfirmOperator,
     NODE_OP_Render,
     NODE_EDITOR_OP_LoadNodes,
     NODE_EDITOR_OP_SaveParameterSetup,

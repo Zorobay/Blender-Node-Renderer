@@ -1,5 +1,12 @@
-from bpy.props import IntProperty, BoolProperty, EnumProperty, CollectionProperty
+import bpy
+
+from bpy.props import IntProperty, BoolProperty, EnumProperty, CollectionProperty, StringProperty
 from bpy.types import PropertyGroup
+
+
+def set_abs_path(self, context):
+    abs_path = bpy.path.abspath(self.render_output_dir)
+    self["render_output_dir"] = abs_path
 
 
 class PG_PublicProps(PropertyGroup):
@@ -19,6 +26,12 @@ class PG_PublicProps(PropertyGroup):
 
     use_standard_setup: BoolProperty(
         name="Use Standard Setup", description="If true, creates a standard light/camera scene setup and renders from a plane.", default=False
+    )
+
+    render_output_dir: StringProperty(
+        subtype="DIR_PATH",
+        default="",
+        update=set_abs_path
     )
 
     STRATEGIES = [("0", "Input Consecutive", "Inputs will be permuted consecutively. For any sample, only one input will be changed"),
@@ -52,6 +65,6 @@ class PG_InternalProps(PropertyGroup):
         default=False
     )
 
-    loaded_parameter_default: CollectionProperty(
+    absolute_render_dir: StringProperty(
 
     )
