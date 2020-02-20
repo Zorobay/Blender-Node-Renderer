@@ -1,4 +1,4 @@
-# Node-Renderer
+# Blender-Node-Renderer
 An Addon for Blender that can automatically vary a set of node parameters based on user defined criteria and render each variation.
 
 ## Dependencies
