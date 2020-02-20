@@ -1,76 +1,15 @@
-import bpy
 import json
+
+import bpy
 from bpy_extras.io_utils import ImportHelper
 
-from npr.src.misc.sockets import find_socket_by_id, input_value_to_json
+from npr.src.misc.parameters import find_socket_by_id
+from npr.src.misc.to_json import input_value_to_json, node_params_to_json
+from npr.src.misc.to_json import (KEY_DEFAULT_PARAMS, KEY_ENABLED, KEY_MAX, KEY_MIN, KEY_NAME, KEY_USER_PARAMS)
 
-KEY_ENABLED = "enabled"
-KEY_USER_PARAMS = "user_params"
-KEY_DEFAULT_PARAMS = "default_params"
-KEY_MAX = "user_max"
-KEY_MIN = "user_min"
-KEY_NAME = "name"
 
 global loaded_param_setup
 loaded_param_setup = None
-
-
-def node_params_to_json(nodes) -> dict:
-    """Extract user set min and max value of node parameters (inputs) and returns them in a dictionary.
-
-    Arguments:
-        nodes - a collection of a material's nodes
-
-    Returns:
-        dict -- a dictionary with parameter values
-    """
-    data = {}
-    for n in nodes:
-        if n.type == "FRAME":
-            continue
-
-        data[n.name] = {
-            KEY_ENABLED: n.node_enabled,
-            KEY_USER_PARAMS: {},
-            KEY_DEFAULT_PARAMS: {},
-        }
-
-        for i in n.inputs:
-            if i.is_linked:
-                continue
-
-            # Store default value
-            try:
-                data[n.name][KEY_DEFAULT_PARAMS][i.identifier] = input_value_to_json(i)
-            except (AttributeError, KeyError):
-                pass
-
-            # Store user data
-            try:
-                props = i.user_props
-                if i.type == "VECTOR" or i.type == "RGBA":
-                    u_min = list(props.user_min)
-                    u_max = list(props.user_max)
-                else:
-                    u_min = props.user_min
-                    u_max = props.user_max
-
-                input_data = {
-                    KEY_ENABLED: i.input_enabled,
-                    KEY_MIN: u_min,
-                    KEY_MAX: u_max,
-                }
-            except AttributeError:
-                input_data = {
-                    KEY_ENABLED: i.input_enabled,
-                }
-
-            data[n.name][KEY_USER_PARAMS][i.identifier] = {
-                KEY_NAME: i.name,
-                KEY_USER_PARAMS: input_data,
-            }
-
-    return data
 
 
 def set_param_value_from_json(node, input_id, input_data):

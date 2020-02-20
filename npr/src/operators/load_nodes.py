@@ -43,6 +43,9 @@ class NODE_EDITOR_OP_LoadNodes(bpy.types.Operator):
                 status = (not i.enabled) or i.is_linked or i.bl_idname in ("NodeSocketVector", "NodeSocketShader") or n.type == "OUTPUT_MATERIAL"
                 i.input_enabled = not status
                 i.input_show = not status
+                if i.type == "VALUE":
+                    i.user_props.user_min = min(i.default_value, i.user_props.user_min)
+                    i.user_props.user_max = max(i.default_value, i.user_props.user_max)
 
                 if n.type == "GROUP":
                     interface = find_socket_by_id(n.node_tree.inputs, i.identifier)

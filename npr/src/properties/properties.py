@@ -29,6 +29,7 @@ class PG_PublicProps(PropertyGroup):
     )
 
     render_output_dir: StringProperty(
+        name="Render Output Dir",
         subtype="DIR_PATH",
         default="",
         update=set_abs_path

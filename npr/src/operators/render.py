@@ -12,12 +12,17 @@ from pathlib import Path
 import statistics as st
 
 import npr
-from npr.src.misc.sockets import input_value_to_json, find_number_of_enabled_sockets, node_params_min_max_to_json, normalize, list_
+from npr.src.misc.parameters import find_number_of_enabled_sockets, set_random_value_for_input
+from npr.src.misc.to_json import input_value_to_json, node_params_min_max_to_json, node_params_to_json
+from npr.src.misc.misc import normalize, list_
 from npr.src.misc.time import seconds_to_complete_time
+from npr.src.misc.parameter_transmutator import transmute_params_random
 
 SCENE_NAME = "RENDER_SCENE_TMP"
 HDRI_FILE = "sunflowers_2k.hdr"
 HDRI_PATH = str(Path(npr.__file__).parent / "res" / HDRI_FILE)
+
+from npr.src.parameter_eliminator.parameter_eliminator import ParameterEliminator
 
 
 def setup_HDRI_for_world(context):
@@ -57,86 +62,6 @@ def setup_HDRI_for_world(context):
     world_node_tree.nodes["Environment Texture"].image = bpy.data.images.load(HDRI_PATH)
 
 
-def color_clamp(val):
-    """Controls the value val so that it is in the range [0,1] and if the value is larger than 1, the overflow will be added to zero. 
-    If the value is less than zero, the overflow will be subtracted from 1. In this way, we can produce well centered HSV values, even if the mean
-    is around 0 or 1.
-    
-    Example:
-        1.5 will be converted to 0.5
-        2.3 will be converted to 0.3
-        -1 will be converted to 0.
-        0.5 will be converted to 0.5    
-    """
-    overflow = val % 1
-    if val > 0:
-        return overflow
-    else:
-        return 1-overflow
-
-def permute_params_random(nodes):
-    """Permutes the parameters of all node inputs
-
-    Arguments:
-        nodes -- The node group containing all nodes
-
-    Returns:
-        A dictionary file with the new parameters.
-    """
-
-    params = {}
-    normalized_lbl = []
-
-    for n in nodes:
-        params[n.name] = {}
-
-        for i in n.inputs:
-            try:
-                # Get properties of the default value
-                def_val_prop = i.bl_rna.properties["default_value"]
-
-                if i.input_enabled and n.node_enabled:  # Only permute parameters if enabled
-                    umin = i.user_props.user_min
-                    umax = i.user_props.user_max
-
-                    if i.type == "RGBA":
-                        c = Color()
-                        c.hsv = color_clamp(random.normalvariate(umin.x, umax.x)), color_clamp(random.normalvariate(umin.y, umax.y)), color_clamp(random.normalvariate(umin.z, umax.z))
-                        val = [*c.hsv]
-                        i.default_value = [*c.rgb, 1.0]
-
-                    elif i.type == "VECTOR":
-                        val = [
-                            random.uniform(umin.x, umax.x),
-                            random.uniform(umin.y, umax.y),
-                            random.uniform(umin.z, umax.z),
-                        ]
-                        i.default_value = val
-                    elif def_val_prop.type == "FLOAT":
-                        val = random.uniform(umin, umax)
-                        i.default_value = val
-                        val = [val]
-                    else:
-                        print(i.type)
-
-                    umin = list_(umin)
-                    umax = list_(umax)
-                    for x in range(len(val)):
-                        normalized_lbl.append(normalize(val[x], umin[x], umax[x]))
-
-                if (
-                        not i.is_linked
-                ):  # Save parameter unless it is linked (even if it wasn't permuted)
-                    params[n.name][i.identifier] = input_value_to_json(i)
-
-            except AttributeError as e:
-                pass
-            except KeyError:
-                pass
-
-    return params, normalized_lbl
-
-
 class NODE_OP_Render(Operator):
     bl_idname = "node.render"
     bl_label = "Render"
@@ -148,7 +73,6 @@ class NODE_OP_Render(Operator):
 
     def execute(self, context):
         all_props = context.scene.props
-        selected_scene = context.window.scene
 
         # Make a full copy of the current scene and only manipulate that one
         if all_props.use_standard_setup:
@@ -176,7 +100,7 @@ class NODE_OP_Render(Operator):
 
             # Add plane and apply material
             ops.mesh.primitive_plane_add(
-                size=3, enter_editmode=False, location=(0, 0, 0), rotation=(0, 0, 0)
+                size=2, enter_editmode=False, location=(0, 0, 0), rotation=(0, 0, 0)
             )
             plane = context.selected_objects[0]
             plane.data.materials.append(material)
@@ -185,7 +109,7 @@ class NODE_OP_Render(Operator):
             setup_HDRI_for_world(context)
 
             # Setup camera placement
-            ops.object.camera_add(rotation=(0, 0, 0), location=(0, 0, 1.6))
+            ops.object.camera_add(rotation=(0, 0, 0), location=(0, 0, 2))
             context.selected_objects[0].name = "Rendering Camera"
             context.scene.camera = context.object
 
@@ -198,15 +122,17 @@ class NODE_OP_Render(Operator):
         context.scene.cycles.feature_set = "SUPPORTED"
         context.scene.cycles.samples = 200
 
-        # Setup render constants
+        # Initialize render variables
         FILEPATH = all_props.render_output_dir
         FILE_EXTENSION = render.file_extension
         N = all_props.render_amount
-        NUM_PARAMS = find_number_of_enabled_sockets(nodes)
-        PERMUTATION_STRATEGY = context.scene.props.permutation_strategy
         param_data = {}
         data_labels = []
         r = 0
+
+        # ==== Eliminate parameters automatically ====
+        pe = ParameterEliminator(nodes, render)
+        pe.eliminate_parameters(thresh=0.1)
 
         # Save parameter mins and maxes (so that we can normalize them later)
         FILENAME = "param_min_max.json"
@@ -220,7 +146,7 @@ class NODE_OP_Render(Operator):
         # renderer = Renderer(nodes, N, NUM_PARAMS)
 
         while r < N:
-            pd, rl = permute_params_random(nodes)
+            pd, rl = transmute_params_random(nodes)
             param_data[r] = pd
             data_labels.append(rl)
 
@@ -262,120 +188,3 @@ class NODE_OP_Render(Operator):
         )
 
         return {"FINISHED"}
-
-
-class Renderer:
-    def __init__(self, nodes, N, P):
-        """
-        Arguments:
-            N -- The total number of samples
-            P -- The total number of parameters
-        """
-        self.nodes = nodes
-        self.N = N
-        self.P = P
-        self.SPP = int(self.N / self.P)  # Total number of samples per parameter
-        self.EXCESS = max(
-            0, self.N - (self.SPP * self.P)
-        )  # The number of parameters that can be allowed to render 1 more sample (for consecutive)
-        self.excess_r = 0  # The number of parameters that have been rendered 'excessively' (SPP + 1)
-        self.current_param_r = 0
-        self._current_param_max_r = self.SPP + (
-            1 if self.EXCESS > 0 else 0)  # This is used to calculate the number of steps we can increase the parameter value
-        self.current_param_i = 0  # Index of the current parameter
-        self.current_node_i = 0  # Index of the current node
-        self.ENABLED_NODES = [n for n in self.nodes if n.node_enabled]
-        self.current_node = self.ENABLED_NODES[0]
-        self._enabled_params = self._get_enabled_params()
-        self.current_param = self._enabled_params[0]
-        self.current_default_value = copy.copy(self.current_param.default_value)
-
-    def _get_enabled_params(self):
-        return [i for i in self.current_node.inputs if i.input_enabled]
-
-    def _set_next_node_and_param(self):
-        self.current_param_i += 1
-
-        if self.current_param_i >= len(self._enabled_params):
-            self.current_node_i += 1
-            if self.current_node_i >= len(self.ENABLED_NODES):
-                return
-            self.current_param_i = 0
-            self.current_node = self.ENABLED_NODES[self.current_node_i]
-            self._enabled_params = self._get_enabled_params()
-
-        self.current_param = self._enabled_params[self.current_param_i]
-        self.current_default_value = copy.copy(self.current_param.default_value)
-
-    def _get_color_range(self, center, radius):
-        """Returns a possible color value range, shifted from center by radius."""
-        _max = center + radius
-        _min = center - radius
-        if _max > 1.0:
-            diff = 1.0 - _max
-            _max = -diff
-            _min + diff
-        elif _min < 0.0:
-            _max -= _min
-            _min = 0.0
-
-        return (_min, _max)
-
-    def _get_next_default_value(self, umin, umax, r, rmax, input_type):
-        rmax -= 1  # Need to divide by one less to cover all values from min to max
-        if input_type in ("RGBA", "VECTOR"):
-            val = [n + r * ((x - n) / rmax) for (x, n) in zip(umin, umax)]
-            if input_type == "RGBA":
-                val.append(1.0)
-        elif input_type == "INT":
-            val = round(umin + r * ((umax - umin) / rmax))
-        else:
-            val = umin + r * ((umax - umin) / rmax)
-
-        return val
-
-    def permute_params_consecutive(self, r):
-        """This permutation strategy permutes all parameters consecutively until exhausted, therefore, for any image, only one parameter will have changed.
-        A parameter will not start permutating until the previous is done permutating.
-
-        Arguments:
-            nodes --
-            r -- The current sample number
-        """
-        def_val = self.current_param.bl_rna.properties["default_value"]
-        input_type = self.current_param.type
-
-        if input_type == "RGBA":
-            c = Color(self.current_param.default_value[:3])
-            var = 0.1
-            (umin, umax) = [self._get_color_range(c, var) for c in c.hsv]
-        else:
-            umin = self.current_param.user_props.user_min
-            umax = self.current_param.user_props.user_max
-
-        self.current_param.default_value = self._get_next_default_value(umin, umax, r, self._current_param_max_r, input_type)
-
-        # Check if we're done with this input
-        self.current_param_r += 1
-        if self.current_param_r > self._current_param_max_r:
-            if self._current_param_max_r > self.SPP:
-                self.excess_r += 1
-            else:
-                self.current_param_r = 0
-                # Reset this parameter to default
-                self.current_param.default_value = self.current_default_value
-                self._current_param_max_r = self.SPP + 1 if self.excess_r < self.EXCESS else self.SPP
-
-                self._set_next_node_and_param()
-
-        params = {}
-        # Save values for all parameters
-        for n in self.nodes:
-            params[n.name] = {}
-            for i in n.inputs:
-                if not i.is_linked:
-                    try:
-                        params[n.name][i.identifier] = input_value_to_json(i)
-                    except KeyError:
-                        pass
-        return params
