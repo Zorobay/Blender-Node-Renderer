@@ -1,25 +1,27 @@
-# Node-Permutation-Renderer
-An automatic renderer for Blender that can vary a set of node parameters and render each variation set.
+# Node-Renderer
+An Addon for Blender that can automatically vary a set of node parameters based on user defined criteria and render each variation.
 
-## Setup of Pypredef in VS Code
+## Dependencies
+
+Unfortunately, this addon needs a few external Python modules to take advantage of the parameter optimization feature. **This step is optional, but recommended**. To install them, find the python executable that is bundles with blender by executing the following in the Python Console editor inside Blender:
+
+```python
+import sys
+sys.exec_prefix
+```
+
+Start a command window (PowerShell or Git Bash) and `cd` to that path. From there, execute the following to install the needed modules:
+
+```cmd
+./bin/python -m pip install Pillow sklearn
+```
+## Development
+Development is easiest done in VS Code, as the excellent [Blender Development](https://github.com/JacquesLucke/blender_vscode) plugin makes life so much easier when developing. Install it, then setup the *pypredef* so that vs-code can autocomplete the `bpy` module.
+
+### Setup of Pypredef in VS Code
 
 Go to `User Settings` and search for `python auto complete extra paths`. Edit the JSON settings and add 
 
 ```
 "python.autoComplete.extraPaths": ["PATH/TO/PREDEF"],
-```
-
-## Useful tips and tricks for Blender Addon Development
-
-### Values for bl_xxx
-
-Valid values for `bl_space_type`:
-
-```
-('EMPTY', 'VIEW_3D', 'IMAGE_EDITOR', 'NODE_EDITOR', 'SEQUENCE_EDITOR', 'CLIP_EDITOR', 'DOPESHEET_EDITOR', 'GRAPH_EDITOR', 'NLA_EDITOR', 'TEXT_EDITOR', 'CONSOLE', 'INFO', 'TOPBAR', 'STATUSBAR', 'OUTLINER', 'PROPERTIES', 'FILE_BROWSER', 'PREFERENCES')
-```
-
-Valid values for `subtype=`
-```
-('COLOR', 'TRANSLATION', 'DIRECTION', 'VELOCITY', 'ACCELERATION', 'MATRIX', 'EULER', 'QUATERNION', 'AXISANGLE', 'XYZ', 'COLOR_GAMMA', 'LAYER', 'LAYER_MEMBER', 'POWER', 'NONE')
 ```
