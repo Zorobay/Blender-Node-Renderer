@@ -11,7 +11,7 @@ from mathutils import Color
 from pathlib import Path
 import statistics as st
 
-import npr
+import bnr
 from bnr.src.misc.parameters import find_number_of_enabled_sockets, set_random_value_for_input
 from bnr.src.misc.to_json import input_value_to_json, node_params_min_max_to_json, node_params_to_json
 from bnr.src.misc.misc import normalize, list_
