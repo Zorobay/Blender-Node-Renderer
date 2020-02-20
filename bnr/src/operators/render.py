@@ -12,17 +12,17 @@ from pathlib import Path
 import statistics as st
 
 import npr
-from npr.src.misc.parameters import find_number_of_enabled_sockets, set_random_value_for_input
-from npr.src.misc.to_json import input_value_to_json, node_params_min_max_to_json, node_params_to_json
-from npr.src.misc.misc import normalize, list_
-from npr.src.misc.time import seconds_to_complete_time
-from npr.src.misc.parameter_transmutator import transmute_params_random
+from bnr.src.misc.parameters import find_number_of_enabled_sockets, set_random_value_for_input
+from bnr.src.misc.to_json import input_value_to_json, node_params_min_max_to_json, node_params_to_json
+from bnr.src.misc.misc import normalize, list_
+from bnr.src.misc.time import seconds_to_complete_time
+from bnr.src.misc.parameter_transmutator import transmute_params_random
 
 SCENE_NAME = "RENDER_SCENE_TMP"
 HDRI_FILE = "sunflowers_2k.hdr"
-HDRI_PATH = str(Path(npr.__file__).parent / "res" / HDRI_FILE)
+HDRI_PATH = str(Path(bnr.__file__).parent / "res" / HDRI_FILE)
 
-from npr.src.parameter_eliminator.parameter_eliminator import ParameterEliminator
+from bnr.src.parameter_eliminator.parameter_eliminator import ParameterEliminator
 
 
 def setup_HDRI_for_world(context):

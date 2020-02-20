@@ -1,6 +1,6 @@
 import bpy
 from bpy.props import CollectionProperty, BoolProperty
-from npr.src.panels.base_panel import NODE_EDITOR_PT_Panel
+from bnr.src.panels.base_panel import NODE_EDITOR_PT_Panel
 
 class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
     bl_idname = "NODE_EDITOR_PT_NodesPanel"

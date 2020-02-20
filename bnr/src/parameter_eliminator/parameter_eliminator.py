@@ -1,7 +1,7 @@
 from bpy import ops
-from npr.src.misc.to_json import node_params_to_json
-from npr.src.misc.parameters import set_random_value_for_input
-from npr.src.misc.parameter_transmutator import transmute_params_random
+from bnr.src.misc.to_json import node_params_to_json
+from bnr.src.misc.parameters import set_random_value_for_input
+from bnr.src.misc.parameter_transmutator import transmute_params_random
 
 import numpy as np
 from PIL import Image

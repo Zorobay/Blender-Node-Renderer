@@ -1,4 +1,4 @@
-from npr.src.panels.base_panel import NODE_EDITOR_PT_Panel
+from bnr.src.panels.base_panel import NODE_EDITOR_PT_Panel
 
 
 class NODE_EDITOR_PT_SettingsPanel(NODE_EDITOR_PT_Panel):

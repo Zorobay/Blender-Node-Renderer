@@ -1,4 +1,4 @@
-from npr.src.misc.misc import list_
+from bnr.src.misc.misc import list_
 
 KEY_ENABLED = "enabled"
 KEY_USER_PARAMS = "user_params"

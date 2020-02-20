@@ -1,5 +1,5 @@
-from npr.src.misc.parameters import set_random_value_for_input
-from npr.src.misc.to_json import input_value_to_json
+from bnr.src.misc.parameters import set_random_value_for_input
+from bnr.src.misc.to_json import input_value_to_json
 
 def transmute_params_random(nodes):
     """transmutes the parameters of all node inputs

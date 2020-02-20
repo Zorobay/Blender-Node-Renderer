@@ -1,6 +1,6 @@
 import bpy
 
-from npr.src.operators.parameter_setup import find_socket_by_id
+from bnr.src.operators.parameter_setup import find_socket_by_id
 
 
 def get_input_min_maxes(input_node):

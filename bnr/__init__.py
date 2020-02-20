@@ -24,20 +24,20 @@ bl_info = {
 import bpy
 from bpy.props import PointerProperty, BoolProperty
 
-from npr.src.operators.load_nodes import NODE_EDITOR_OP_LoadNodes
-from npr.src.operators.parameter_setup import (
+from bnr.src.operators.load_nodes import NODE_EDITOR_OP_LoadNodes
+from bnr.src.operators.parameter_setup import (
     NODE_EDITOR_OP_SaveParameterSetup,
     NODE_EDITOR_OP_LoadParameterSetup,
     NODE_EDITOR_OP_LoadDefaultParameters
 )
-from npr.src.operators.render import NODE_OP_Render
-from npr.src.panels.nodes_panel import NODE_EDITOR_PT_NodesPanel
-from npr.src.panels.settings_panel import NODE_EDITOR_PT_SettingsPanel
-from npr.src.properties.properties import (
+from bnr.src.operators.render import NODE_OP_Render
+from bnr.src.panels.nodes_panel import NODE_EDITOR_PT_NodesPanel
+from bnr.src.panels.settings_panel import NODE_EDITOR_PT_SettingsPanel
+from bnr.src.properties.properties import (
     PG_PublicProps,
     PG_InternalProps,
 )
-from npr.src.properties.socket_props import (
+from bnr.src.properties.socket_props import (
     FLOAT_SOCKET_PG_UserProperties,
     FLOAT_FACTOR_SOCKET_PG_UserProperties,
     FLOAT_VECTOR_SOCKET_PG_UserProperties,

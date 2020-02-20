@@ -3,9 +3,9 @@ import json
 import bpy
 from bpy_extras.io_utils import ImportHelper
 
-from npr.src.misc.parameters import find_socket_by_id
-from npr.src.misc.to_json import input_value_to_json, node_params_to_json
-from npr.src.misc.to_json import (KEY_DEFAULT_PARAMS, KEY_ENABLED, KEY_MAX, KEY_MIN, KEY_NAME, KEY_USER_PARAMS)
+from bnr.src.misc.parameters import find_socket_by_id
+from bnr.src.misc.to_json import input_value_to_json, node_params_to_json
+from bnr.src.misc.to_json import (KEY_DEFAULT_PARAMS, KEY_ENABLED, KEY_MAX, KEY_MIN, KEY_NAME, KEY_USER_PARAMS)
 
 
 global loaded_param_setup

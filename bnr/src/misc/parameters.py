@@ -1,7 +1,7 @@
 import random
 import bpy
 from mathutils import Color
-from npr.src.misc import misc
+from bnr.src.misc import misc
 
 def find_socket_by_id(sockets, id: str):
     """Finds a socket among a collection of sockets (inputs/outputs) based on its unique identifier, and not its name.
