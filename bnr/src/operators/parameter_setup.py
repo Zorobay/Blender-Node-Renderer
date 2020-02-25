@@ -3,7 +3,8 @@ import json
 import bpy
 from bpy_extras.io_utils import ImportHelper
 
-from bnr.src.misc.parameters import find_socket_by_id
+from bnr.src.misc.parameters import find_socket_by_id, set_input_enabled, get_input_init_status
+from bnr.src.misc.nodes import get_node_init_status
 from bnr.src.misc.to_json import input_value_to_json, node_params_to_json
 from bnr.src.misc.to_json import (KEY_DEFAULT_PARAMS, KEY_ENABLED, KEY_MAX, KEY_MIN, KEY_NAME, KEY_USER_PARAMS)
 
@@ -13,12 +14,12 @@ loaded_param_setup = None
 
 
 def set_param_value_from_json(node, input_id, input_data):
-    inp = find_socket_by_id(node.inputs, input_id)
-    if inp.bl_idname == "NodeSocketVectorEuler":
-        inp.default_value = input_data[:3]
-        inp.default_value.order = input_data[3]
+    input = find_socket_by_id(node.inputs, input_id)
+    if input.bl_idname == "NodeSocketVectorEuler":
+        input.default_value = input_data[:3]
+        input.default_value.order = input_data[3]
     else:
-        inp.default_value = input_data
+        input.default_value = input_data
 
 
 class NODE_EDITOR_OP_LoadDefaultParameters(bpy.types.Operator):
@@ -55,7 +56,7 @@ class NODE_EDITOR_OP_LoadParameterSetup(bpy.types.Operator, ImportHelper):
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
 
     # Filter files with only .json extension
-    filter_glob = bpy.props.StringProperty(
+    filter_glob: bpy.props.StringProperty(
         default="*.json", options={"HIDDEN"}, maxlen=255,
     )
 
@@ -78,19 +79,23 @@ class NODE_EDITOR_OP_LoadParameterSetup(bpy.types.Operator, ImportHelper):
                 try:
                     node = nodes.get(node_name)
                     node.node_enabled = node_data[KEY_ENABLED]
+                    node.node_show = get_node_init_status(node)
 
                     for input_id, input_data in node_data[KEY_DEFAULT_PARAMS].items():
                         set_param_value_from_json(node, input_id, input_data)
 
                     for input_id, input_data in node_data[KEY_USER_PARAMS].items():
                         input_data = input_data[KEY_USER_PARAMS]
-                        inp = find_socket_by_id(node.inputs, input_id)
-                        inp.input_enabled = input_data[KEY_ENABLED]
+                        input = find_socket_by_id(node.inputs, input_id)
+
+                        set_input_enabled(input, input_data[KEY_ENABLED])
+                        input.input_show = get_input_init_status(input)
+
                         i_min = input_data[KEY_MIN]
                         i_max = input_data[KEY_MAX]
                         try:
-                            inp.user_props.user_min = i_min
-                            inp.user_props.user_max = i_max
+                            input.user_props.user_min = i_min
+                            input.user_props.user_max = i_max
                         except (AttributeError, KeyError):
                             pass
                         except ValueError as e:
@@ -120,7 +125,7 @@ class NODE_EDITOR_OP_SaveParameterSetup(bpy.types.Operator, ImportHelper):
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
 
     # Filter files with only .json extension
-    filter_glob = bpy.props.StringProperty(
+    filter_glob: bpy.props.StringProperty(
         default="*.json", options={"HIDDEN"}, maxlen=255,
     )
 

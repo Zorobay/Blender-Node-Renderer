@@ -1,22 +1,8 @@
 import bpy
 
 from bnr.src.operators.parameter_setup import find_socket_by_id
-
-
-def get_input_min_maxes(input_node):
-    if not input_node:
-        return {}
-
-    data = {}
-    for i in input_node.inputs:
-        id = i.identifier
-        def_val = i.bl_rna.properties["default_value"]
-        data[id] = {
-            "min": def_val.soft_min,
-            "max": def_val.soft_max
-        }
-
-    return data
+from bnr.src.misc.parameters import set_input_enabled, get_input_enabled, get_input_init_status
+from bnr.src.misc.nodes import get_node_init_status
 
 
 class NODE_EDITOR_OP_LoadNodes(bpy.types.Operator):
@@ -35,14 +21,14 @@ class NODE_EDITOR_OP_LoadNodes(bpy.types.Operator):
 
         for n in nodes:
             # Don't display nodes we can't control (no inputs or where all inputs are linked)
-            status = len(n.inputs) == 0 or len([i.name for i in n.inputs if not i.is_linked]) == 0 or n.type == "OUTPUT_MATERIAL"
-            n.node_show = not status
-            n.node_enabled = not status
+            status = get_node_init_status(n)
+            n.node_show = status
+            n.node_enabled = status
 
             for i in n.inputs:
-                status = (not i.enabled) or i.is_linked or i.bl_idname in ("NodeSocketVector", "NodeSocketShader") or n.type == "OUTPUT_MATERIAL"
-                i.input_enabled = not status
-                i.input_show = not status
+                status = get_input_init_status(i,n)
+                set_input_enabled(i, status, and_show=True)
+                
                 if i.type == "VALUE":
                     i.user_props.user_min = min(i.default_value, i.user_props.user_min)
                     i.user_props.user_max = max(i.default_value, i.user_props.user_max)

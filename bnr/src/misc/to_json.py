@@ -1,4 +1,5 @@
 from bnr.src.misc.misc import list_
+from bnr.src.misc.parameters import get_input_enabled
 
 KEY_ENABLED = "enabled"
 KEY_USER_PARAMS = "user_params"
@@ -7,7 +8,7 @@ KEY_MAX = "user_max"
 KEY_MIN = "user_min"
 KEY_NAME = "name"
 
-def input_value_to_json(inp, append_euler=True):
+def input_value_to_json(inp):
     """
     Extracts the default value of an input socket and returns it in a JSON compatible format.
     """
@@ -19,6 +20,7 @@ def input_value_to_json(inp, append_euler=True):
         return val
     else:
         return inp.default_value
+
 
 def node_params_to_json(nodes) -> dict:
     """Extract user set min and max value of node parameters (inputs) and returns them in a dictionary.
@@ -61,13 +63,13 @@ def node_params_to_json(nodes) -> dict:
                     u_max = props.user_max
 
                 input_data = {
-                    KEY_ENABLED: i.input_enabled,
+                    KEY_ENABLED: get_input_enabled(i),
                     KEY_MIN: u_min,
                     KEY_MAX: u_max,
                 }
             except AttributeError:
                 input_data = {
-                    KEY_ENABLED: i.input_enabled,
+                    KEY_ENABLED: get_input_enabled(i),
                 }
 
             data[n.name][KEY_USER_PARAMS][i.identifier] = {
