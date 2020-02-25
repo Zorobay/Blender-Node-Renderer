@@ -11,7 +11,10 @@ def get_input_init_status(i: bpy.types.NodeSocket, n: bpy.types.Node = None):
         Arguments:
             n (Node) - If set, will return false if the Node is not enabled. Set to None (Default) to ignore the status of the node (when using for 'input_show').
     """
-    status = (not i.enabled) or i.is_linked or i.bl_idname in ("NodeSocketVector", "NodeSocketShader") or not n.node_enabled
+    status = (not i.enabled) or i.is_linked or i.bl_idname in ("NodeSocketVector", "NodeSocketShader")
+    if n:
+         status = status or not n.node_enabled
+    
     return not status
 
 def find_socket_by_id(sockets, id: str):
@@ -45,7 +48,7 @@ def find_number_of_enabled_sockets(nodes):
 
     return num
 
-def set_input_enabled(input, enabled, and_show=True, ind=-1):
+def set_input_enabled(input, enabled, and_show=False, ind=-1):
     if input.type in ("RGBA", "VECTOR"):
         if ind > 0:
             input.subinput_enabled[ind] = enabled
