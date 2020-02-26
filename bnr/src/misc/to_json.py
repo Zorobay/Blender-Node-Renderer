@@ -100,7 +100,7 @@ def node_params_min_max_to_json(nodes) -> dict:
                     "type": i.type
                 }
 
-                if is_vector_type(i) and any(i.subinput_enabled):
+                if is_vector_type(i):
                     for i_sub,(mi,ma) in enumerate(zip(umin, umax)):
                         if i.subinput_enabled[i_sub]:
                             data[p] = {
