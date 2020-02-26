@@ -10,10 +10,10 @@ import sys
 sys.exec_prefix
 ```
 
-Start a command window (PowerShell or Git Bash) and `cd` to that path. From there, execute the following to install the needed modules:
+Start a command window (PowerShell or Git Bash) **as an administrator** and `cd` to that path. From there, execute the following to install the needed modules:
 
 ```cmd
-./bin/python -m pip install Pillow sklearn
+./bin/python -m pip install Pillow sklearn numpy
 ```
 ## Development
 Development is easiest done in VS Code, as the excellent [Blender Development](https://github.com/JacquesLucke/blender_vscode) plugin makes life so much easier when developing. Install it, then setup the *pypredef* so that vs-code can autocomplete the `bpy` module.
