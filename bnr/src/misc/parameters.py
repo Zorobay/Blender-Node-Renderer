@@ -4,6 +4,10 @@ from mathutils import Color
 from bnr.src.misc import misc
 from collections import abc
 
+def is_vector_type(input: bpy.types.NodeSocket):
+    """Returns true if the input is of vector type (like ColorSocket or NodeSocketVectorXXX) else False."""
+    return input.type in ("VECTOR", "RGBA")
+
 
 def get_input_init_status(i: bpy.types.NodeSocket, n: bpy.types.Node = None):
     """Returns the enable/show status of an input socket upon loading.
@@ -49,7 +53,7 @@ def find_number_of_enabled_sockets(nodes):
     return num
 
 def set_input_enabled(input, enabled, and_show=False, ind=-1):
-    if input.type in ("RGBA", "VECTOR"):
+    if is_vector_type(input):
         if ind > 0:
             input.subinput_enabled[ind] = enabled
         else:
@@ -62,7 +66,7 @@ def set_input_enabled(input, enabled, and_show=False, ind=-1):
             input.input_show = enabled
 
 def get_input_enabled(input, ind=-1):
-    if input.type in ("RGBA", "VECTOR"):
+    if is_vector_type(input):
         if ind > 0:
             return input.subinput_enabled[ind]
         else:
@@ -70,8 +74,53 @@ def get_input_enabled(input, ind=-1):
     
     return input.input_enabled
 
+def set_random_color(input: bpy.types.NodeSocket, umin: list, umax: list, i_sub=-1):
+    """
+    Calculates a random color based on the HSV ranges supplied in umin and umax. The value of the input will be set to this color. 
+    If i_sub is supplied, only this index will be randomized, else all 3 channels will be randomized.
+    
+        Returns:
+            A list with 1 or 3 new HSV values, based on whether i_sub was supplied or not.
+    """
+    assert i_sub < 3, "i_sub can not be greater than 2 as it corresponds to an index in a color vector (and alpha is not supported)!"
 
-def set_random_value_for_input(input: bpy.types.NodeSocket):
+    c = Color(input.default_value)
+    if i_sub == 0:
+        val = misc.color_clamp(random.normalvariate(umin.x, umax.x))
+        c.h = val
+    elif i_sub == 1:
+        val = misc.color_clamp(random.normalvariate(umin.y, umax.y))
+        c.s = val
+    elif i_sub == 2:
+        val = misc.color_clamp(random.normalvariate(umin.z, umax.z))
+        c.v = val
+    elif i_sub < 0:
+        val = [misc.color_clamp(random.normalvariate(umin.x, umax.x)), misc.color_clamp(random.normalvariate(umin.y, umax.y)), misc.color_clamp(random.normalvariate(umin.z, umax.z))]
+        c.hsv = val
+
+    input.default_value = [*c.rgb, 1.0]
+    return val
+
+def set_random_vector(input: bpy.types.NodeSocket, umin:list, umax:list, i_sub=-1):
+    """
+    Calculates a list of random values based on the ranges supplied in umin and umax. The value of the input will be set to this list.
+    If i_sub is supplied, only this index will be randomized, else all 3 values will be randomized.
+    
+        Returns:
+            A list with 1 or 3 random values, based on whether i_sub was supplied or not.
+    """
+    assert i_sub < 3, "i_sub can not be greater than 2 as it corresponds to an index in a vector (and Blender only has 3D vectors)."
+
+    if i_sub < 0:
+        val = [random.uniform(umin.x, umax.x), random.uniform(umin.y, umax.y), random.uniform(umin.z, umax.z)]
+        input.default_value = val
+    else:
+        val = random.uniform(umin[i_sub], umax[i_sub])
+        input.default_value[i_sub] = val
+
+    return val
+
+def set_random_value_for_input(input: bpy.types.NodeSocket, i_sub = -1):
     """
     Sets a new random value for an input based on its type.
 
@@ -85,21 +134,10 @@ def set_random_value_for_input(input: bpy.types.NodeSocket):
     umin = input.user_props.user_min
     umax = input.user_props.user_max
 
-    # Get properties of the default value
-    def_val_prop = input.bl_rna.properties["default_value"]
-
     if input.type == "RGBA":
-        c = Color()
-        c.hsv = misc.color_clamp(random.normalvariate(umin.x, umax.x)), misc.color_clamp(random.normalvariate(umin.y, umax.y)), misc.color_clamp(random.normalvariate(umin.z, umax.z))
-        val = [*c.hsv]
-        input.default_value = [*c.rgb, 1.0]
+        val = set_random_color(input, umin, umax, i_sub=i_sub)
     elif input.type == "VECTOR":
-        val = [
-            random.uniform(umin.x, umax.x),
-            random.uniform(umin.y, umax.y),
-            random.uniform(umin.z, umax.z),
-        ]
-        input.default_value = val
+        val = set_random_vector(input, umin, umax, i_sub=i_sub)
     elif input.type == "VALUE":
         val = random.uniform(umin, umax)
         input.default_value = val
@@ -113,7 +151,10 @@ def set_random_value_for_input(input: bpy.types.NodeSocket):
     umin = misc.list_(umin)
     umax = misc.list_(umax)
     val = misc.list_(val)
-    for x in range(len(val)):
-        normalized_lbl.append(misc.normalize(val[x], umin[x], umax[x]))
+    if i_sub >= 0:
+        normalized_lbl.append(misc.normalize(val[0], umin[i_sub], umax[i_sub])) 
+    else:
+        for x in range(len(val)):
+            normalized_lbl.append(misc.normalize(val[x], umin[x], umax[x]))
 
     return normalized_lbl

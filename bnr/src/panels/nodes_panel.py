@@ -47,10 +47,12 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
                 if not i.input_show:
                     continue
 
-                c1.prop(i, "input_enabled", text="{}({})".format(i.identifier, i.name))
-
                 try:
                     if i.bl_idname in ("NodeSocketColor"):
+                        c1.prop(i, "subinput_enabled", text="{}({}) H".format(i.identifier, i.name), index=0)       
+                        c1.prop(i, "subinput_enabled", text="{}({}) S".format(i.identifier, i.name), index=1)                      
+                        c1.prop(i, "subinput_enabled", text="{}({}) V".format(i.identifier, i.name), index=2)                      
+
                         c2_sub = c2.column_flow(align=True)
                         c2_sub.prop(i.user_props, "user_min", text="H (μ)", index=0)
                         c2_sub.prop(i.user_props, "user_min", text="S (μ)", index=1)
@@ -59,12 +61,16 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
                         c3_sub.prop(i.user_props, "user_max", text="H (σ)", index=0)
                         c3_sub.prop(i.user_props, "user_max", text="S (σ)", index=1)
                         c3_sub.prop(i.user_props, "user_max", text="V (σ)", index=2)
-                        c1.separator(factor=6.8)
+                        #c1.separator(factor=1.8)
                     elif i.bl_idname.startswith("NodeSocketVector"):
+                        c1.prop(i, "subinput_enabled", text="{}({}) X".format(i.identifier, i.name), index=0)       
+                        c1.prop(i, "subinput_enabled", text="{}({}) Y".format(i.identifier, i.name), index=1)                      
+                        c1.prop(i, "subinput_enabled", text="{}({}) Z".format(i.identifier, i.name), index=2)   
                         c2.prop(i.user_props, "user_min", text="")
                         c3.prop(i.user_props, "user_max", text="")
-                        c1.separator(factor=6.3)
+                        #c1.separator(factor=1.3)
                     else:
+                        c1.prop(i, "input_enabled", text="{}({})".format(i.identifier, i.name))
                         c2.prop(i.user_props, "user_min", text="")
                         c3.prop(i.user_props, "user_max", text="")                       
    

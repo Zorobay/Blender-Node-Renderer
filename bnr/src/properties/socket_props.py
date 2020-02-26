@@ -1,4 +1,4 @@
-from bpy.props import FloatProperty, FloatVectorProperty
+from bpy.props import FloatProperty, FloatVectorProperty, BoolProperty
 from bpy.types import PropertyGroup
 
 

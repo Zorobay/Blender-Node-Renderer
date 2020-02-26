@@ -32,7 +32,7 @@ class NODE_EDITOR_PT_SettingsPanel(NODE_EDITOR_PT_Panel):
         col2.operator("nodes.load_nodes")
 
         # Display all the properties that can be changed by the user to control the rendering
-        props = ["x_res", "y_res", "render_amount", "use_standard_setup", "render_output_dir"]
+        props = ["x_res", "y_res", "render_amount", "use_standard_setup", "eliminate_parameters", "render_output_dir",]
 
         for p in props:
             name = all_props.bl_rna.properties[p].name

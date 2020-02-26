@@ -12,9 +12,9 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 bl_info = {
-    "name": "Node Permutator Renderer",
+    "name": "Node Renderer",
     "author": "Sebastian Hegardt",
-    "description": "",
+    "description": "An Addon for Blender that can automatically vary a set of node parameters based on user defined criteria and render each variation.",
     "blender": (2, 80, 0),
     "version": (0, 0, 1),
     "location": "Node Editor Toolbar under Render",
@@ -22,7 +22,7 @@ bl_info = {
 }
 
 import bpy
-from bpy.props import PointerProperty, BoolProperty
+from bpy.props import PointerProperty, BoolProperty, BoolVectorProperty
 
 from bnr.src.operators.load_nodes import NODE_EDITOR_OP_LoadNodes
 from bnr.src.operators.parameter_setup import (
@@ -36,13 +36,16 @@ from bnr.src.panels.settings_panel import NODE_EDITOR_PT_SettingsPanel
 from bnr.src.properties.properties import (
     PG_PublicProps,
     PG_InternalProps,
+    PG_ParameterEliminationProperties
 )
 from bnr.src.properties.socket_props import (
     FLOAT_SOCKET_PG_UserProperties,
     FLOAT_FACTOR_SOCKET_PG_UserProperties,
     FLOAT_VECTOR_SOCKET_PG_UserProperties,
-    COLOR_SOCKET_PG_UserProperties
+    COLOR_SOCKET_PG_UserProperties,
 )
+
+from bnr.src.parameter_eliminator.parameter_eliminator import NODE_OP_EliminateParameters
 
 panels = (
     NODE_EDITOR_PT_SettingsPanel,
@@ -54,21 +57,22 @@ operators = (
     NODE_EDITOR_OP_LoadNodes,
     NODE_EDITOR_OP_SaveParameterSetup,
     NODE_EDITOR_OP_LoadParameterSetup,
-    NODE_EDITOR_OP_LoadDefaultParameters
+    NODE_EDITOR_OP_LoadDefaultParameters,
+    NODE_OP_EliminateParameters,
 )
 
 properties = (
     PG_PublicProps,
     PG_InternalProps,
+    PG_ParameterEliminationProperties,
     FLOAT_SOCKET_PG_UserProperties,
     FLOAT_FACTOR_SOCKET_PG_UserProperties,
     FLOAT_VECTOR_SOCKET_PG_UserProperties,
-    COLOR_SOCKET_PG_UserProperties
+    COLOR_SOCKET_PG_UserProperties,
 )
 
 VEC_TYPES = (bpy.types.NodeSocketVectorXYZ, bpy.types.NodeSocketVector, bpy.types.NodeSocketVectorAcceleration,
              bpy.types.NodeSocketVectorDirection, bpy.types.NodeSocketVectorTranslation, bpy.types.NodeSocketVectorEuler)
-
 
 def register():
     for c in (*properties, *operators, *panels):
@@ -80,17 +84,23 @@ def register():
     # Register our internal props on the Scene object
     bpy.types.Scene.internal_props = PointerProperty(type=PG_InternalProps)
 
+    # Register internal properties for parameter elimination
+    bpy.types.Scene.pe_props = PointerProperty(type=PG_ParameterEliminationProperties)
+
     # Register boolean property on the node type
     bpy.types.Node.node_enabled = BoolProperty(default=False)
     bpy.types.Node.node_show = BoolProperty(default=False)
 
     # Register boolean property on the NodeSocket type
-    bpy.types.NodeSocket.input_enabled = BoolProperty(default=False)
-    bpy.types.NodeSocket.input_show = BoolProperty(default=False)
+    bpy.types.NodeSocketStandard.input_enabled = BoolProperty(default=False)
+    bpy.types.NodeSocketStandard.input_show = BoolProperty(default=False)
 
     bpy.types.NodeSocketFloat.user_props = PointerProperty(type=FLOAT_SOCKET_PG_UserProperties)
     bpy.types.NodeSocketFloatFactor.user_props = PointerProperty(type=FLOAT_FACTOR_SOCKET_PG_UserProperties)
     bpy.types.NodeSocketColor.user_props = PointerProperty(type=COLOR_SOCKET_PG_UserProperties)
+
+    # Override input_enabled for vector types (as we keep x,y and z as separate inputs)
+    bpy.types.NodeSocketColor.subinput_enabled = BoolVectorProperty(default=(False, False, False))
 
     # Register user props on vector types
     for t in VEC_TYPES:
@@ -116,6 +126,7 @@ def register():
             })
         bpy.utils.register_class(VectorPropertyType)
         t.user_props = PointerProperty(type=VectorPropertyType)
+        t.subinput_enabled = BoolVectorProperty(default=(False, False, False))
 
 
 def unregister():
@@ -126,9 +137,10 @@ def unregister():
     del bpy.types.Scene.internal_props
     del bpy.types.Node.node_enabled
     del bpy.types.Node.node_show
-    del bpy.types.NodeSocket.input_enabled
-    del bpy.types.NodeSocket.input_show
+    del bpy.types.NodeSocketStandard.input_enabled
+    del bpy.types.NodeSocketStandard.input_show
     del bpy.types.NodeSocketFloat.user_props
 
-    for t in VEC_TYPES:
+    for t in (*VEC_TYPES, bpy.types.NodeSocketColor):
         del t.user_props
+        del t.subinput_enabled

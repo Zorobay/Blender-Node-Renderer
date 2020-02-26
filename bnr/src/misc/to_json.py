@@ -1,5 +1,5 @@
 from bnr.src.misc.misc import list_
-from bnr.src.misc.parameters import get_input_enabled
+from bnr.src.misc.parameters import get_input_enabled, is_vector_type
 
 KEY_ENABLED = "enabled"
 KEY_USER_PARAMS = "user_params"
@@ -55,7 +55,7 @@ def node_params_to_json(nodes) -> dict:
             # Store user data
             try:
                 props = i.user_props
-                if i.type == "VECTOR" or i.type == "RGBA":
+                if is_vector_type(i):
                     u_min = list(props.user_min)
                     u_max = list(props.user_max)
                 else:
@@ -91,26 +91,32 @@ def node_params_min_max_to_json(nodes) -> dict:
     for n in nodes:
         if n.node_enabled:
             for i in n.inputs:
-                if i.input_enabled:
-                    i_data = {
-                        "node_name": n.name,
-                        "identifier": i.identifier,
-                        "input_name": i.name,
-                        "type": i.type
+                umin = i.user_props.user_min
+                umax = i.user_props.user_max
+                i_data = {
+                    "node_name": n.name,
+                    "identifier": i.identifier,
+                    "input_name": i.name,
+                    "type": i.type
+                }
+
+                if is_vector_type(i) and any(i.subinput_enabled):
+                    for i_sub,(mi,ma) in enumerate(zip(umin, umax)):
+                        if i.subinput_enabled[i_sub]:
+                            data[p] = {
+                                **i_data,
+                                KEY_MIN: mi,
+                                KEY_MAX: ma,
+                                "sub_idex": i_sub
+                            }
+                            p+=1
+                elif i.input_enabled:
+                    data[p] = {
+                        **i_data,
+                        KEY_MIN: umin,
+                        KEY_MAX: umax,
+                        "sub_idex": 0
                     }
-
-                    umin = list_(i.user_props.user_min)
-                    umax = list_(i.user_props.user_max)
-
-                    assert len(umax) == len(umin)
-
-                    for j in range(len(umin)):
-                        data[p] = {
-                            **i_data,
-                            "user_min": umin[j],
-                            "user_max": umax[j],
-                            "sub_idex": j
-                        }
-                        p += 1
+                    p+=1
 
     return data

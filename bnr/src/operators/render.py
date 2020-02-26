@@ -12,17 +12,16 @@ from pathlib import Path
 import statistics as st
 
 import bnr
-from bnr.src.misc.parameters import find_number_of_enabled_sockets, set_random_value_for_input
+from bnr.src.misc.parameters import find_number_of_enabled_sockets
 from bnr.src.misc.to_json import input_value_to_json, node_params_min_max_to_json, node_params_to_json
 from bnr.src.misc.misc import normalize, list_
 from bnr.src.misc.time import seconds_to_complete_time
 from bnr.src.misc.parameter_transmutator import transmute_params_random
 
+
 SCENE_NAME = "RENDER_SCENE_TMP"
 HDRI_FILE = "sunflowers_2k.hdr"
 HDRI_PATH = str(Path(bnr.__file__).parent / "res" / HDRI_FILE)
-
-from bnr.src.parameter_eliminator.parameter_eliminator import ParameterEliminator
 
 
 def setup_HDRI_for_world(context):
@@ -131,8 +130,10 @@ class NODE_OP_Render(Operator):
         r = 0
 
         # ==== Eliminate parameters automatically ====
-        pe = ParameterEliminator(nodes, render)
-        pe.eliminate_parameters(thresh=0.1)
+        if all_props.eliminate_parameters:
+            pe_props = context.scene.pe_props
+            pe_props.norm_thresh = 2.0
+            ops.node.eliminate_parameters()
 
         # Save parameter mins and maxes (so that we can normalize them later)
         FILENAME = "param_min_max.json"
