@@ -7,6 +7,7 @@ KEY_DEFAULT_PARAMS = "default_params"
 KEY_MAX = "user_max"
 KEY_MIN = "user_min"
 KEY_NAME = "name"
+KEY_SUB_INDEX = "i_sub"
 
 def input_value_to_json(inp):
     """
@@ -83,7 +84,7 @@ def node_params_to_json(nodes) -> dict:
 def node_params_min_max_to_json(nodes) -> dict:
     """
     Returns a json document with information about the min and max values that the user has set for enabled parameters.
-    Parameters with complex types (like vectors and colors) are added as separate parameters, and can be identified by their 'sub_index' parameter.
+    Parameters with complex types (like vectors and colors) are added as separate parameters, and can be identified by their 'i_sub' field.
     """
     p = 0
     data = {}
@@ -107,7 +108,7 @@ def node_params_min_max_to_json(nodes) -> dict:
                                 **i_data,
                                 KEY_MIN: mi,
                                 KEY_MAX: ma,
-                                "sub_idex": i_sub
+                                KEY_SUB_INDEX: i_sub
                             }
                             p+=1
                 elif i.input_enabled:
@@ -115,7 +116,7 @@ def node_params_min_max_to_json(nodes) -> dict:
                         **i_data,
                         KEY_MIN: umin,
                         KEY_MAX: umax,
-                        "sub_idex": 0
+                        KEY_SUB_INDEX: 0
                     }
                     p+=1
 
