@@ -3,7 +3,7 @@ An Addon for Blender that can automatically vary a set of node parameters based 
 
 ## Dependencies
 
-Unfortunately, this addon needs a few external Python modules to take advantage of the parameter optimization feature. **This step is optional, but recommended**. To install them, find the python executable that is bundles with blender by executing the following in the Python Console editor inside Blender:
+Unfortunately, this addon needs a few external Python modules to take advantage of the parameter optimization feature. To install them, find the python executable that is bundles with blender by executing the following in the Python Console editor inside Blender:
 
 ```python
 import sys
