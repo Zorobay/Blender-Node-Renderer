@@ -1,7 +1,7 @@
 import bpy
 
 from bnr.src.operators.parameter_setup import find_socket_by_id
-from bnr.src.misc.parameters import set_input_enabled, get_input_enabled, get_input_init_status
+from bnr.src.misc.parameters import set_input_enabled, get_input_init_status
 from bnr.src.misc.nodes import get_node_init_status
 
 

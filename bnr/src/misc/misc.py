@@ -23,10 +23,7 @@ def color_clamp(val):
         1.5 will be converted to 0.5
         2.3 will be converted to 0.3
         -1 will be converted to 0
+        -0.3 will be converted to 0.7
         0.5 will be converted to 0.5    
     """
-    overflow = val % 1
-    if val > 0:
-        return overflow
-    else:
-        return 1-overflow
+    return val % 1

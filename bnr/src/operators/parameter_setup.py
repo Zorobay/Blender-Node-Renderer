@@ -9,10 +9,6 @@ from bnr.src.misc.to_json import input_value_to_json, node_params_to_json
 from bnr.src.misc.to_json import (KEY_DEFAULT_PARAMS, KEY_ENABLED, KEY_MAX, KEY_MIN, KEY_NAME, KEY_USER_PARAMS)
 
 
-global loaded_param_setup
-loaded_param_setup = None
-
-
 def set_param_value_from_json(node, input_id, input_data):
     input = find_socket_by_id(node.inputs, input_id)
     if input.bl_idname == "NodeSocketVectorEuler":
@@ -20,6 +16,13 @@ def set_param_value_from_json(node, input_id, input_data):
         input.default_value.order = input_data[3]
     else:
         input.default_value = input_data
+
+def load_default_parameters(json_data:dict, nodes):
+    for node_name, node_data in json_data.items():
+        node = nodes.get(node_name)
+
+        for input_id, input_data in node_data[KEY_DEFAULT_PARAMS].items():
+            set_param_value_from_json(node, input_id, input_data)
 
 
 class NODE_EDITOR_OP_LoadDefaultParameters(bpy.types.Operator):
@@ -32,16 +35,16 @@ class NODE_EDITOR_OP_LoadDefaultParameters(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return loaded_param_setup and context.material
+        props = context.scene.internal_props
+        return len(props.parameter_setup_filepath) > 0 and context.material
 
     def execute(self, context):
         nodes = context.material.node_tree.nodes
+        props = context.scene.internal_props
 
-        for node_name, node_data in loaded_param_setup.items():
-            node = nodes.get(node_name)
-
-            for input_id, input_data in node_data[KEY_DEFAULT_PARAMS].items():
-                set_param_value_from_json(node, input_id, input_data)
+        with open(props.parameter_setup_filepath, "r") as f:
+            data = json.load(f)
+            load_default_parameters(data, nodes)
 
         return {"FINISHED"}
 
@@ -62,18 +65,16 @@ class NODE_EDITOR_OP_LoadParameterSetup(bpy.types.Operator, ImportHelper):
 
     @classmethod
     def poll(cls, context):
-        return (
-                context.material is not None and context.scene.internal_props.nodes_loaded
-        )
+        return context.material is not None and context.scene.internal_props.nodes_loaded
 
     def execute(self, context):
         nodes = context.material.node_tree.nodes
+        props = context.scene.internal_props
         data = {}
 
         with open(self.filepath, "r") as f:
             data = json.load(f)
-            global loaded_param_setup
-            loaded_param_setup = data
+            props.parameter_setup_filepath = self.filepath
 
             for node_name, node_data in data.items():
                 try:
@@ -131,9 +132,8 @@ class NODE_EDITOR_OP_SaveParameterSetup(bpy.types.Operator, ImportHelper):
 
     @classmethod
     def poll(cls, context):
-        return (
-                context.material is not None and context.scene.internal_props.nodes_loaded
-        )
+        return context.material is not None and context.scene.internal_props.nodes_loaded
+        
 
     def execute(self, context):
         nodes = context.material.node_tree.nodes

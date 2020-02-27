@@ -1,5 +1,6 @@
 import random
 import bpy
+import numpy as np
 from mathutils import Color
 from bnr.src.misc import misc
 from collections import abc
@@ -65,10 +66,10 @@ def set_input_enabled(input, enabled, and_show=False, ind=-1):
         if and_show:
             input.input_show = enabled
 
-def get_input_enabled(input, ind=-1):
+def get_input_enabled(input, i_sub=-1):
     if is_vector_type(input):
-        if ind > 0:
-            return input.subinput_enabled[ind]
+        if i_sub > 0:
+            return input.subinput_enabled[i_sub]
         else:
             return any(input.subinput_enabled)
     
@@ -84,7 +85,7 @@ def set_random_color(input: bpy.types.NodeSocket, umin: list, umax: list, i_sub=
     """
     assert i_sub < 3, "i_sub can not be greater than 2 as it corresponds to an index in a color vector (and alpha is not supported)!"
 
-    c = Color(input.default_value)
+    c = Color(input.default_value[:3])  # Exclude the alpha channel
     if i_sub == 0:
         val = misc.color_clamp(random.normalvariate(umin.x, umax.x))
         c.h = val
@@ -98,7 +99,7 @@ def set_random_color(input: bpy.types.NodeSocket, umin: list, umax: list, i_sub=
         val = [misc.color_clamp(random.normalvariate(umin.x, umax.x)), misc.color_clamp(random.normalvariate(umin.y, umax.y)), misc.color_clamp(random.normalvariate(umin.z, umax.z))]
         c.hsv = val
 
-    input.default_value = [*c.rgb, 1.0]
+    input.default_value = [*c[:], 1.0]
     return val
 
 def set_random_vector(input: bpy.types.NodeSocket, umin:list, umax:list, i_sub=-1):
@@ -158,3 +159,28 @@ def set_random_value_for_input(input: bpy.types.NodeSocket, i_sub = -1):
             normalized_lbl.append(misc.normalize(val[x], umin[x], umax[x]))
 
     return normalized_lbl
+
+def linspace(input: bpy.types.NodeSocket, n:int, i_sub=-1) -> np.ndarray:
+    """
+    Generates a linspace between a sockets user set minimum and maximum of length n.
+    The linspace will correspond to 95% of possible values of a normal distribution if the input is of type RGBA.
+    """
+    if i_sub >= 0:
+        umin = input.user_props.user_min[i_sub]
+        umax = input.user_props.user_max[i_sub]
+    else:
+        umin = input.user_props.user_min
+        umax = input.user_props.user_max
+
+    if input.type == "RGBA":
+        mu = umin
+        std = umax
+        mi, ma = mu-2*std, mu + 2*std # Capture 95% of values sampled from normal dist
+        return linspace_color(mi, ma, n)
+    else:
+        return np.linspace(umin, umax, num=n, endpoint=True)
+
+def linspace_color(start, end, n: int):
+    lin = np.linspace(start, end, num=n, endpoint=True)
+    return [misc.color_clamp(x) for x in lin]
+        

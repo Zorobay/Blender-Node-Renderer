@@ -63,14 +63,16 @@ def node_params_to_json(nodes) -> dict:
                     u_min = props.user_min
                     u_max = props.user_max
 
+                enabled = list(i.subinput_enabled) if is_vector_type(i) else i.input_enabled
                 input_data = {
-                    KEY_ENABLED: get_input_enabled(i),
+                    KEY_ENABLED: enabled,
                     KEY_MIN: u_min,
                     KEY_MAX: u_max,
                 }
-            except AttributeError:
+            except AttributeError as e:
+                # Some nodes don't have user_props (as the user doesn't need to set its max or min)
                 input_data = {
-                    KEY_ENABLED: get_input_enabled(i),
+                    KEY_ENABLED: list(i.subinput_enabled) if is_vector_type(i) else i.input_enabled
                 }
 
             data[n.name][KEY_USER_PARAMS][i.identifier] = {

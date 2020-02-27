@@ -57,8 +57,9 @@ class PG_ParameterEliminationProperties(PropertyGroup):
     L_loops: IntProperty(default=5)
     C_components: IntProperty(default=8)
     norm_thresh: FloatProperty(default=2.0)
-    N_renders: IntProperty(default=10)
+    N_renders: IntProperty(default=8)
     i_sub: IntProperty()
+    total_explained_var_thresh: FloatProperty(default=0.89)
 
 
 class PG_InternalProps(PropertyGroup):
@@ -82,6 +83,8 @@ class PG_InternalProps(PropertyGroup):
     )
 
     absolute_render_dir: PG_ParameterEliminationProperties
+
+    parameter_setup_filepath: StringProperty()
 
 
 

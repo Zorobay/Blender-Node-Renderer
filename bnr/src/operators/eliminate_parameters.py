@@ -2,7 +2,7 @@ from bpy.props import StringProperty, IntProperty, FloatProperty
 from bpy.types import Operator,NodeSocket
 from bpy import ops
 from bnr.src.misc.to_json import node_params_to_json
-from bnr.src.misc.parameters import get_input_enabled, set_input_enabled, is_vector_type
+from bnr.src.misc.parameters import get_input_enabled, set_input_enabled, is_vector_type, linspace
 from bnr.src.misc.parameter_transmutator import transmute_params_random
 
 import numpy as np
@@ -43,31 +43,35 @@ class NODE_OP_EliminateParameters(Operator):
                 continue
 
             for i in n.inputs:
-                if not get_input_enabled(i):
-                    continue
                 
                 if is_vector_type(i):  # We treat elements of vectory types as separate parameters
-                    for i_sub in range(3):
+                    for i_sub, en in enumerate(i.subinput_enabled):
+                        if not en:
+                            continue
+
                         props.i_sub = i_sub
-                        decision = self._get_decision_for_input(i, nodes, props, render, i_sub=i_sub)
+                        decision, max_norm = self._get_decision_for_input(i, nodes, props, render, i_sub=i_sub)
                         if not decision:
                             set_input_enabled(i, False, ind=i_sub)
-                            msg = "DISABLED input {} index {} (Node: {}).".format(i.name, i_sub, n.name)
+                            msg = "DISABLED input {} index {} of node {} (Max Norm: {:.3f}).".format(i.name, i_sub, n.name, max_norm)
                             print(msg)
                             eliminated.append(msg)
                         else:
-                            print("Keeping input {} index {} (Node: {}).".format(i.name, i_sub, n.name))
+                            print("Keeping input {} index {} of node {} (Max Norm: {:.3f}).".format(i.name, i_sub, n.name, max_norm))
 
                 else:
+                    if not i.input_enabled:
+                        continue
+
                     props.i_sub = -1
-                    decision = self._get_decision_for_input(i, nodes, props, render)
+                    decision, max_norm = self._get_decision_for_input(i, nodes, props, render)
                     if not decision:
                         set_input_enabled(i, False)
-                        msg = "DISABLED input {} (Node: {}).".format(i.name, n.name)
+                        msg = "DISABLED input {} of node {} (Max Norm: {:.3f}).".format(i.name, n.name, max_norm)
                         print(msg)
                         eliminated.append(msg)
                     else:
-                        print("Keeping input {} (Node: {}).".format(i.name, n.name))
+                        print("Keeping input {} of node {} (Max Norm: {:.3f}).".format(i.name, n.name, max_norm))
 
         print("==== Parameter elimination summary ====")
         print("Total parameters eliminated: {}".format(len(eliminated)))
@@ -79,15 +83,9 @@ class NODE_OP_EliminateParameters(Operator):
         return {"FINISHED"}
 
     def _get_decision_for_input(self, input, nodes, props, render, i_sub=-1):
-        if i_sub >= 0:
-            umin = input.user_props.user_min[i_sub]
-            umax = input.user_props.user_max[i_sub]
-        else:
-            umin = input.user_props.user_min
-            umax = input.user_props.user_max
-
-        possible_values = np.linspace(umin, umax, num=props.N_renders, endpoint=True)
-
+        possible_values = linspace(input, n=props.N_renders, i_sub=i_sub)
+        total_max_norm = 0
+        
         # Loop L times (as it might have more impact for some parameter randomizations than others)
         for l in range(props.L_loops):
             #image_paths = ops.node.render_over_values(input, possible_values, i_sub=i_sub)
@@ -106,21 +104,22 @@ class NODE_OP_EliminateParameters(Operator):
             pca = PCA(n_components=props.C_components)
             principal_comps = pca.fit_transform(image_matrix)
             exp_var_rat = pca.explained_variance_ratio_
-            if sum(exp_var_rat) < 0.89:
-                print("Warning! The total explained variance ratio is below 0.9 ({})!".format(sum(exp_var_rat)))
+            if sum(exp_var_rat) < props.total_explained_var_thresh:
+                print("Warning! The total explained variance ratio is below {} ({})!".format(props.total_explained_var_thresh, sum(exp_var_rat)))
 
             base_pcs = principal_comps[0,:]
             max_norm = 0
             for ind, pcs in enumerate(principal_comps[1:]):
                 norm_ = norm(base_pcs, pcs, exp_var_rat)
                 max_norm = max(max_norm, norm_)
+                total_max_norm = max(total_max_norm, max_norm)
                 if norm_ >= props.norm_thresh:
-                    print("(loop {}) max norm of {} did reach threshold of {} in image {}".format(l, max_norm, props.norm_thresh, ind+1))
-                    return True
+                    print("(loop {}) max norm of {:.3f} did reach threshold of {} in image {}".format(l, max_norm, props.norm_thresh, ind+1))
+                    return True, total_max_norm
             
-            print("(loop {}) max norm of {} did not reach threshold of {}".format(l, max_norm, props.norm_thresh))
+            print("(loop {}) max norm of {:.3f} did not reach threshold of {}".format(l, max_norm, props.norm_thresh))
 
-        return False  # If not enough entropy was reached in any loop, this input can be disabled
+        return False, total_max_norm  # If not enough entropy was reached in any loop, this input can be disabled
 
 
     def render_over_values(self, input: NodeSocket, possible_values: list, props, render, i_sub=-1):

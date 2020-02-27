@@ -45,7 +45,7 @@ from bnr.src.properties.socket_props import (
     COLOR_SOCKET_PG_UserProperties,
 )
 
-from bnr.src.parameter_eliminator.parameter_eliminator import NODE_OP_EliminateParameters
+from bnr.src.operators.eliminate_parameters import NODE_OP_EliminateParameters
 
 panels = (
     NODE_EDITOR_PT_SettingsPanel,
