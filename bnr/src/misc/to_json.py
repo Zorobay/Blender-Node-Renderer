@@ -1,5 +1,6 @@
 from bnr.src.misc.misc import list_
 from bnr.src.misc.parameters import get_input_enabled, is_vector_type
+from mathutils import Color
 
 KEY_ENABLED = "enabled"
 KEY_USER_PARAMS = "user_params"
@@ -14,9 +15,12 @@ def input_value_to_json(inp):
     Extracts the default value of an input socket and returns it in a JSON compatible format.
     """
     if inp.bl_rna.properties["default_value"].array_length > 1:
-        val = list(inp.default_value)
-        if inp.bl_idname == "NodeSocketVectorEuler":
-            val.append(inp.default_value.order)
+        if inp.type == "RGBA":
+            val = list(Color(inp.default_value[:3]).hsv)
+        else:
+            val = list(inp.default_value)
+            if inp.bl_idname == "NodeSocketVectorEuler":
+                val.append(inp.default_value.order)
 
         return val
     else:

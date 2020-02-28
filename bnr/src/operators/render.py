@@ -183,8 +183,8 @@ class NODE_OP_Render(Operator):
 
         total_time = time.time() - start_time
         sys.stdout.write(
-            "Total Time: {:.1f}s [Avg per render: {:.3f}s]".format(
-                total_time, total_time / (N)
+            "Total Time: {}h {}m {:.2f}s [Avg per render: {:.3f}s]".format(
+                *seconds_to_complete_time(total_time), total_time / (N)
             )
         )
 

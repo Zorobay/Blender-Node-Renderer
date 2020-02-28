@@ -55,12 +55,12 @@ class NODE_EDITOR_PT_NodesPanel(NODE_EDITOR_PT_Panel):
 
                         c2_sub = c2.column_flow(align=True)
                         c2_sub.prop(i.user_props, "user_min", text="H (μ)", index=0)
-                        c2_sub.prop(i.user_props, "user_min", text="S (μ)", index=1)
-                        c2_sub.prop(i.user_props, "user_min", text="V (μ)", index=2)
+                        c2_sub.prop(i.user_props, "user_min", text="S", index=1)
+                        c2_sub.prop(i.user_props, "user_min", text="V", index=2)
                         c3_sub = c3.column_flow(align=True)
                         c3_sub.prop(i.user_props, "user_max", text="H (σ)", index=0)
-                        c3_sub.prop(i.user_props, "user_max", text="S (σ)", index=1)
-                        c3_sub.prop(i.user_props, "user_max", text="V (σ)", index=2)
+                        c3_sub.prop(i.user_props, "user_max", text="S", index=1)
+                        c3_sub.prop(i.user_props, "user_max", text="V", index=2)
                         #c1.separator(factor=1.8)
                     elif i.bl_idname.startswith("NodeSocketVector"):
                         c1.prop(i, "subinput_enabled", text="{}({}) X".format(i.identifier, i.name), index=0)       

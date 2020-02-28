@@ -3,6 +3,8 @@ import json
 import bpy
 from bpy_extras.io_utils import ImportHelper
 
+from mathutils import Color
+
 from bnr.src.misc.parameters import find_socket_by_id, set_input_enabled, get_input_init_status
 from bnr.src.misc.nodes import get_node_init_status
 from bnr.src.misc.to_json import input_value_to_json, node_params_to_json
@@ -14,6 +16,10 @@ def set_param_value_from_json(node, input_id, input_data):
     if input.bl_idname == "NodeSocketVectorEuler":
         input.default_value = input_data[:3]
         input.default_value.order = input_data[3]
+    elif input.bl_idname == "NodeSocketColor":
+        c = Color()
+        c.hsv = input_data
+        input.default_value = [*c[:], 1.0]
     else:
         input.default_value = input_data
 

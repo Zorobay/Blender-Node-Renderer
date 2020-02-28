@@ -85,22 +85,39 @@ def set_random_color(input: bpy.types.NodeSocket, umin: list, umax: list, i_sub=
     """
     assert i_sub < 3, "i_sub can not be greater than 2 as it corresponds to an index in a color vector (and alpha is not supported)!"
 
-    c = Color(input.default_value[:3])  # Exclude the alpha channel
+    if i_sub < 0:
+        val = [misc.color_clamp(random.normalvariate(umin.x, umax.x)), random.uniform(umin.y, umax.y), random.uniform(umin.z, umax.z)]
+    elif i_sub in (1,2):
+        val = random.uniform(umin[i_sub], umax[i_sub])
+    else:
+        val = misc.color_clamp(random.normalvariate(umin[i_sub], umax[i_sub]))  # Sample the Hue from a normal distribution
+    c = Color(input.default_value[:3])
+    np.set_printoptions(formatter={"float_kind":"{:.3f}".format})
+    rgb,hsv = hsv_to_rgb(input, val, i_sub=i_sub)
+    orig = input.default_value
+    input.default_value = rgb
+    def print_(list_):
+        return "{:.3f},{:.3f},{:.3f}".format(*list_[:3])
+
+    if input.name == "Color1" and i_sub == 1:
+        c.s = val
+        print("Target HSV: {}  Actual HSV: {}   Val: {}".format(print_(c.hsv), print_(Color(input.default_value[:3]).hsv), val))
+
+    return val
+
+def hsv_to_rgb(input, val, i_sub=-1):
+    c = Color(input.default_value[:3])
+
     if i_sub == 0:
-        val = misc.color_clamp(random.normalvariate(umin.x, umax.x))
         c.h = val
     elif i_sub == 1:
-        val = misc.color_clamp(random.normalvariate(umin.y, umax.y))
         c.s = val
     elif i_sub == 2:
-        val = misc.color_clamp(random.normalvariate(umin.z, umax.z))
         c.v = val
     elif i_sub < 0:
-        val = [misc.color_clamp(random.normalvariate(umin.x, umax.x)), misc.color_clamp(random.normalvariate(umin.y, umax.y)), misc.color_clamp(random.normalvariate(umin.z, umax.z))]
         c.hsv = val
 
-    input.default_value = [*c[:], 1.0]
-    return val
+    return [*c[:], 1.0], c.hsv  # Return RGB values
 
 def set_random_vector(input: bpy.types.NodeSocket, umin:list, umax:list, i_sub=-1):
     """
@@ -172,7 +189,7 @@ def linspace(input: bpy.types.NodeSocket, n:int, i_sub=-1) -> np.ndarray:
         umin = input.user_props.user_min
         umax = input.user_props.user_max
 
-    if input.type == "RGBA":
+    if input.type == "RGBA" and i_sub == 0:  # Only the Hue of a color is not represented by a normal linspace
         mu = umin
         std = umax
         mi, ma = mu-2*std, mu + 2*std # Capture 95% of values sampled from normal dist
