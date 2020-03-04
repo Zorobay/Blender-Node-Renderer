@@ -1,6 +1,8 @@
 # Blender-Node-Renderer
 An Addon for Blender that can automatically vary a set of node parameters based on user defined criteria and render each variation.
 
+**This addon is currently under development and is not expected to be stable whatsoever**
+
 ## Dependencies
 
 Unfortunately, this addon needs a few external Python modules to take advantage of the parameter optimization feature. To install them, find the python executable that is bundles with blender by executing the following in the Python Console editor inside Blender:
