@@ -91,17 +91,9 @@ def set_random_color(input: bpy.types.NodeSocket, umin: list, umax: list, i_sub=
         val = random.uniform(umin[i_sub], umax[i_sub])
     else:
         val = misc.color_clamp(random.normalvariate(umin[i_sub], umax[i_sub]))  # Sample the Hue from a normal distribution
-    c = Color(input.default_value[:3])
-    np.set_printoptions(formatter={"float_kind":"{:.3f}".format})
-    rgb,hsv = hsv_to_rgb(input, val, i_sub=i_sub)
-    orig = input.default_value
-    input.default_value = rgb
-    def print_(list_):
-        return "{:.3f},{:.3f},{:.3f}".format(*list_[:3])
 
-    if input.name == "Color1" and i_sub == 1:
-        c.s = val
-        print("Target HSV: {}  Actual HSV: {}   Val: {}".format(print_(c.hsv), print_(Color(input.default_value[:3]).hsv), val))
+    rgb = hsv_to_rgb(input, val, i_sub=i_sub)
+    input.default_value = rgb
 
     return val
 
@@ -117,7 +109,7 @@ def hsv_to_rgb(input, val, i_sub=-1):
     elif i_sub < 0:
         c.hsv = val
 
-    return [*c[:], 1.0], c.hsv  # Return RGB values
+    return [*c[:], 1.0]  # Return RGB values
 
 def set_random_vector(input: bpy.types.NodeSocket, umin:list, umax:list, i_sub=-1):
     """
