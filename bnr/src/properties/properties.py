@@ -51,6 +51,11 @@ class PG_PublicProps(PropertyGroup):
         description="Run a parameter elimination strategy to automatically disable parameters that do not contribute enough change in the look of the renders.",
         default=False)
 
+    debug_mode: BoolProperty(
+        name="Debug Mode",
+        description="If debug mode is enabled, more information will be printed and renders of parameter elimination will be saved, together with log files.",
+        default=True
+    )
 
 class PG_ParameterEliminationProperties(PropertyGroup):
     render_tmp_output: StringProperty(default=str(Path("/tmp/")))

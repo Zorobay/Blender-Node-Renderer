@@ -25,3 +25,5 @@ Go to `User Settings` and search for `python auto complete extra paths`. Edit th
 ```
 "python.autoComplete.extraPaths": ["PATH/TO/PREDEF"],
 ```
+
+### Important 

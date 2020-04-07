@@ -5,11 +5,13 @@ import random
 import sys
 import time
 import csv
+import numpy as np
+
+from PIL import Image
 from bpy import ops
 from bpy.types import Operator
 from mathutils import Color
 from pathlib import Path
-import statistics as st
 
 import bnr
 from bnr.src.misc.parameters import find_number_of_enabled_sockets
@@ -116,10 +118,11 @@ class NODE_OP_Render(Operator):
         render.resolution_x = all_props.x_res
         render.resolution_y = all_props.y_res
         render.resolution_percentage = 100
-        render.engine = "CYCLES"
-        context.scene.cycles.device = "GPU"
-        context.scene.cycles.feature_set = "SUPPORTED"
-        context.scene.cycles.samples = 200
+        render.engine = "BLENDER_EEVEE"
+        #context.scene.eevee.samples = 200
+        #context.scene.cycles.device = "GPU"
+        #context.scene.cycles.feature_set = "SUPPORTED"
+        #context.scene.cycles.samples = 200
 
         # Initialize render variables
         FILEPATH = all_props.render_output_dir
@@ -151,7 +154,8 @@ class NODE_OP_Render(Operator):
             param_data[r] = pd
             data_labels.append(rl)
 
-            render.filepath = "{}{}{}".format(FILEPATH, r, FILE_EXTENSION)
+            filename = "{}{}{}".format(FILEPATH, r, FILE_EXTENSION)
+            render.filepath = filename
             ops.render.render(write_still=True)
             r += 1
 
