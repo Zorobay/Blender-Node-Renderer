@@ -1,11 +1,11 @@
 # Blender-Node-Renderer
-An Addon for Blender that can automatically vary a set of node parameters based on user defined criteria and render each variation.
+An Addon for Blender that can automatically vary a set of node parameters based on user defined criteria and render each variation. This can be useful when rendering a dataset to be used for training of neural networks or if you simply want to experiment with some parameters and automatically render each variant.
 
 :warning:**This addon is currently under development and is not expected to be stable whatsoever**:warning:
 
 ## Dependencies
 
-Unfortunately, this addon needs a few external Python modules to take advantage of the parameter optimization feature. To install them, find the python executable that is bundles with blender by executing the following in the Python Console editor inside Blender:
+Unfortunately, this addon needs a few external Python modules to take advantage of the parameter optimization feature. To install them, find the python executable that is bundled with blender by executing the following in the Python Console editor inside Blender:
 
 ```python
 import sys
@@ -25,7 +25,7 @@ Development is easiest done in VS Code, as the excellent [Blender Development](h
 Go to `User Settings` and search for `python auto complete extra paths`. Edit the JSON settings and add 
 
 ```
-"python.autoComplete.extraPaths": ["PATH/TO/PREDEF"],
+"python.autoComplete.extraPaths": ["C:/.../Blender-Node-Renderer/pypredef/2.80"],
 ```
 
 ### Important 
